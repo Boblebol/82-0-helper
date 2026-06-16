@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { CandidateRecommendation, SkipAdvice } from "../../src/scoring/projections";
 import type { GameState, Player } from "../../src/domain/types";
-import { renderSidebar } from "../../src/content/sidebar";
+import { ensureSidebarHost, renderSidebar } from "../../src/content/sidebar";
 
 const kobe: Player = {
   id: "kobe",
@@ -114,5 +114,94 @@ describe("sidebar", () => {
     expect(onRetry).toHaveBeenCalledTimes(1);
     expect(onResetManualState).toHaveBeenCalledTimes(1);
     expect(root.querySelector(".assistant-shell")?.classList.contains("is-open")).toBe(true);
+  });
+
+  it("tracks mobile toggle aria state", () => {
+    const root = document.createElement("div");
+
+    renderSidebar(root, {
+      state,
+      recommendations: [recommendation],
+      gaps: [],
+      skipAdvice,
+      error: null,
+      onEdit: vi.fn(),
+      onRetry: vi.fn(),
+      onResetManualState: vi.fn()
+    });
+
+    const toggle = root.querySelector<HTMLButtonElement>("button[data-action='toggle']");
+
+    expect(toggle?.getAttribute("aria-expanded")).toBe("false");
+
+    toggle?.click();
+
+    expect(toggle?.getAttribute("aria-expanded")).toBe("true");
+    expect(root.querySelector(".assistant-shell")?.classList.contains("is-open")).toBe(true);
+  });
+
+  it("preserves the open mobile drawer across rerenders", () => {
+    const root = document.createElement("div");
+
+    renderSidebar(root, {
+      state,
+      recommendations: [recommendation],
+      gaps: [],
+      skipAdvice,
+      error: null,
+      onEdit: vi.fn(),
+      onRetry: vi.fn(),
+      onResetManualState: vi.fn()
+    });
+
+    root.querySelector<HTMLButtonElement>("button[data-action='toggle']")?.click();
+
+    renderSidebar(root, {
+      state,
+      recommendations: [recommendation],
+      gaps: [],
+      skipAdvice,
+      error: null,
+      onEdit: vi.fn(),
+      onRetry: vi.fn(),
+      onResetManualState: vi.fn()
+    });
+
+    expect(root.querySelector(".assistant-shell")?.classList.contains("is-open")).toBe(true);
+    expect(root.querySelector<HTMLButtonElement>("button[data-action='toggle']")?.getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("escapes player and error text before rendering", () => {
+    const root = document.createElement("div");
+    const dangerousPlayer: Player = {
+      ...kobe,
+      name: '<img src=x onerror=alert(1)>'
+    };
+
+    renderSidebar(root, {
+      state: { ...state, visiblePlayers: [dangerousPlayer] },
+      recommendations: [{
+        ...recommendation,
+        player: dangerousPlayer
+      }],
+      gaps: [],
+      skipAdvice,
+      error: '<img src=x onerror=alert(1)>',
+      onEdit: vi.fn(),
+      onRetry: vi.fn(),
+      onResetManualState: vi.fn()
+    });
+
+    expect(root.querySelector("img")).toBeNull();
+    expect(root.textContent).toContain("<img src=x onerror=alert(1)>");
+  });
+
+  it("reuses the sidebar host and injects styles once", () => {
+    const first = ensureSidebarHost();
+    const second = ensureSidebarHost();
+
+    expect(first).toBe(second);
+    expect(document.querySelectorAll("#assistant-82-0-host")).toHaveLength(1);
+    expect(first.querySelectorAll("style#assistant-82-0-sidebar-style")).toHaveLength(1);
   });
 });

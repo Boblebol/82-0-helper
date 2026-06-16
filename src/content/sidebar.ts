@@ -42,6 +42,7 @@ export function ensureSidebarHost(): ShadowRoot {
 
 export function renderSidebar(root: Element | ShadowRoot, viewModel: SidebarViewModel): void {
   const container = ensureSidebarContainer(root);
+  const wasOpen = container.querySelector(".assistant-shell")?.classList.contains("is-open") ?? false;
   const shellClass = "assistant-shell";
   const stateLabel = `${viewModel.state.mode} • ${viewModel.state.confidence} confidence`;
   const headerLine = [
@@ -49,10 +50,11 @@ export function renderSidebar(root: Element | ShadowRoot, viewModel: SidebarView
     viewModel.state.decade ?? "Unknown decade"
   ].join(" ");
   const roundLabel = viewModel.state.round == null ? "Round ?" : `Round ${viewModel.state.round}`;
+  const ariaExpanded = wasOpen ? "true" : "false";
 
   container.innerHTML = `
-    <section class="${shellClass}">
-      <button class="assistant-toggle" type="button" data-action="toggle" aria-expanded="true">82 Assist</button>
+    <section class="${shellClass}${wasOpen ? " is-open" : ""}">
+      <button class="assistant-toggle" type="button" data-action="toggle" aria-expanded="${ariaExpanded}">82 Assist</button>
       <div class="assistant-panel" role="region" aria-label="Assistant sidebar">
         <header class="assistant-header">
           <div>
@@ -103,7 +105,8 @@ function wireEvents(root: Element | ShadowRoot, viewModel: SidebarViewModel): vo
   retryButton?.addEventListener("click", () => viewModel.onRetry());
   resetButton?.addEventListener("click", () => viewModel.onResetManualState());
   toggleButton?.addEventListener("click", () => {
-    shell?.classList.toggle("is-open");
+    const isOpen = shell?.classList.toggle("is-open") ?? false;
+    toggleButton.setAttribute("aria-expanded", String(isOpen));
   });
 }
 
