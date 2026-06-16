@@ -63,6 +63,9 @@ describe("sidebar", () => {
     expect(root.textContent).toContain("Kobe Bryant");
     expect(root.textContent).toContain("Expected +28");
     expect(root.textContent).toContain("Ceiling +32");
+    expect(root.textContent).toContain("Skip advice");
+    expect(root.textContent).toContain("keep");
+    expect(root.textContent).toContain("The current roll is strong relative to reroll options.");
     expect(root.textContent).toContain("AST");
     expect(root.querySelector("button[data-action='edit']")).not.toBeNull();
   });
