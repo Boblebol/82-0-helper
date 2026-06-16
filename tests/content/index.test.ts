@@ -357,6 +357,38 @@ describe("content entrypoint", () => {
     expect(host?.shadowRoot?.textContent).toContain("keep");
   });
 
+  it("renders better-pick reroll odds for available rerolls only", async () => {
+    document.body.innerHTML = `
+      <main>
+        <p>Classic</p>
+        <p>Round 1/5</p>
+        <h2>MIN 1990s</h2>
+        <button>Team</button>
+        <button disabled>Era</button>
+        <button>Weak Wing 2.0 PPG 1.0 RPG 1.0 APG</button>
+      </main>
+    `;
+
+    await startAssistant({
+      fetchPlayers: async () => ({
+        players: [weakWing, eliteWing],
+        byRoll: new Map([
+          ["MIN::1990s", [weakWing]],
+          ["LAL::1990s", [eliteWing]]
+        ]),
+        byName: new Map()
+      }),
+      observeMutations: false
+    });
+
+    const host = document.getElementById("assistant-82-0-host");
+    expect(host?.shadowRoot?.textContent).toContain("Team reroll");
+    expect(host?.shadowRoot?.textContent).toContain("100% better than Weak Wing");
+    expect(host?.shadowRoot?.textContent).toContain("1/1 rolls");
+    expect(host?.shadowRoot?.textContent).toContain("Era reroll");
+    expect(host?.shadowRoot?.textContent).toContain("used");
+  });
+
   it("saves partial manual corrections without clearing detected state", async () => {
     const memory = new Map<string, unknown>();
     const set = vi.fn(async (value: Record<string, unknown>) => {

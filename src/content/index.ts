@@ -3,7 +3,16 @@ import type { Decade, GameState } from "../domain/types";
 import { detectGameState } from "./detectors";
 import { ensureSidebarHost, renderSidebar } from "./sidebar";
 import { clearManualState, loadManualState, mergeManualState, saveManualState } from "../storage/manual-state";
-import { estimateRerollDeltas, evaluateRoll, recommendSkip, type CandidateRecommendation, type RerollDeltas, type SkipAdvice } from "../scoring/projections";
+import {
+  estimateRerollBetterOdds,
+  estimateRerollDeltas,
+  evaluateRoll,
+  recommendSkip,
+  type CandidateRecommendation,
+  type RerollBetterOdds,
+  type RerollDeltas,
+  type SkipAdvice
+} from "../scoring/projections";
 
 export interface StartOptions {
   fetchPlayers?: () => Promise<PlayerIndex>;
@@ -89,15 +98,18 @@ async function renderWithState(
     currentTeam: effectiveState.confidence === "high" ? effectiveState.team : null,
     currentDecade: effectiveState.confidence === "high" ? effectiveState.decade : null
   });
+  const bestRecommendation = evaluation.recommendations[0];
   const skipAdvice = error
     ? fallbackSkipAdvice(error)
-    : bestSkipAdvice(evaluation.recommendations[0], rerollDeltas, effectiveState);
+    : bestSkipAdvice(bestRecommendation, rerollDeltas, effectiveState);
+  const rerollOdds = error ? null : bestRerollOdds(bestRecommendation, effectiveState, index);
 
   renderSidebar(root, {
     state: effectiveState,
     recommendations: error ? [] : evaluation.recommendations,
     gaps: error ? [] : evaluation.gaps,
     skipAdvice,
+    rerollOdds,
     error,
     onEdit: () => undefined,
     onRetry: () => {
@@ -153,6 +165,22 @@ function bestSkipAdvice(recommendation: CandidateRecommendation | undefined, rer
   });
 }
 
+function bestRerollOdds(recommendation: CandidateRecommendation | undefined, state: GameState, index: PlayerIndex): RerollBetterOdds | null {
+  if (!recommendation) {
+    return null;
+  }
+
+  return estimateRerollBetterOdds({
+    roster: state.roster,
+    allPlayers: index.players,
+    currentTeam: state.confidence === "high" ? state.team : null,
+    currentDecade: state.confidence === "high" ? state.decade : null,
+    baselineDeltaWins: recommendation.withPickWins - recommendation.currentWins,
+    canSkipTeam: !state.skipsUsed.team,
+    canSkipDecade: !state.skipsUsed.decade
+  });
+}
+
 function fallbackSkipAdvice(error: string): SkipAdvice {
   return {
     kind: "keep",
@@ -172,6 +200,7 @@ function renderLoadingState(root: ShadowRoot): void {
       kind: "keep",
       reason: "Waiting for player data before evaluating this roll."
     },
+    rerollOdds: null,
     loading: "Loading player data...",
     error: null,
     onEdit: () => undefined,

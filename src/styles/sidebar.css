@@ -196,6 +196,41 @@
   text-transform: capitalize;
 }
 
+.assistant-reroll-odds {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.assistant-reroll-odds p {
+  display: grid;
+  grid-template-columns: minmax(86px, auto) minmax(0, 1fr);
+  gap: 6px 8px;
+  align-items: baseline;
+  margin: 0;
+  color: #d8dde2;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.assistant-reroll-odds span {
+  color: #aeb6bd;
+  font-weight: 700;
+}
+
+.assistant-reroll-odds strong {
+  min-width: 0;
+  color: #eef1f4;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.assistant-reroll-odds em {
+  grid-column: 2;
+  color: #aeb6bd;
+  font-style: normal;
+}
+
 .assistant-table-wrap {
   overflow-x: auto;
 }

@@ -1,12 +1,13 @@
 import sidebarStyles from "../styles/sidebar.css?inline";
 import { ACTIVE_DECADES, type Decade, type GameState, type Position } from "../domain/types";
-import type { CandidateRecommendation, SkipAdvice } from "../scoring/projections";
+import type { CandidateRecommendation, RerollBetterOdds, RerollHitRate, SkipAdvice } from "../scoring/projections";
 
 export interface SidebarViewModel {
   state: GameState;
   recommendations: CandidateRecommendation[];
   gaps: string[];
   skipAdvice: SkipAdvice;
+  rerollOdds?: RerollBetterOdds | null;
   loading?: string | null;
   error: string | null;
   onEdit: () => void;
@@ -76,7 +77,7 @@ export function renderSidebar(root: Element | ShadowRoot, viewModel: SidebarView
         ${viewModel.loading ? loadingCard(viewModel.loading) : ""}
         ${bestPickCard(viewModel.recommendations[0])}
         ${recommendationsTable(viewModel.recommendations)}
-        ${skipAdviceCard(viewModel.skipAdvice)}
+        ${skipAdviceCard(viewModel.skipAdvice, viewModel.rerollOdds ?? null, viewModel.recommendations[0])}
         ${rosterCard(viewModel.state.roster)}
         ${gapsCard(viewModel.gaps)}
         ${manualEditPanel(viewModel.state, wasEditing)}
@@ -338,15 +339,54 @@ function recommendationsTable(recommendations: CandidateRecommendation[]): strin
   `;
 }
 
-function skipAdviceCard(skipAdvice: SkipAdvice): string {
+function skipAdviceCard(skipAdvice: SkipAdvice, rerollOdds: RerollBetterOdds | null, recommendation: CandidateRecommendation | undefined): string {
   const label = skipAdvice.kind.replace(/-/g, " ");
+  const odds = rerollOdds && recommendation ? rerollOddsList(rerollOdds, recommendation.player.name) : "";
 
   return `
     <section class="assistant-card">
       <p class="assistant-card-title">Skip advice</p>
       <div class="assistant-pill">${escapeHtml(label)}</div>
       <p class="assistant-copy">${escapeHtml(skipAdvice.reason)}</p>
+      ${odds}
     </section>
+  `;
+}
+
+function rerollOddsList(rerollOdds: RerollBetterOdds, baselinePlayerName: string): string {
+  return `
+    <div class="assistant-reroll-odds" aria-label="reroll odds">
+      ${rerollOddsRow("Team reroll", rerollOdds.team, baselinePlayerName)}
+      ${rerollOddsRow("Era reroll", rerollOdds.decade, baselinePlayerName)}
+    </div>
+  `;
+}
+
+function rerollOddsRow(label: string, rate: RerollHitRate, baselinePlayerName: string): string {
+  if (!rate.available) {
+    return `
+      <p>
+        <span>${escapeHtml(label)}</span>
+        <strong>used</strong>
+      </p>
+    `;
+  }
+
+  if (rate.totalRolls === 0) {
+    return `
+      <p>
+        <span>${escapeHtml(label)}</span>
+        <strong>n/a</strong>
+      </p>
+    `;
+  }
+
+  return `
+    <p>
+      <span>${escapeHtml(label)}</span>
+      <strong>${formatPercent(rate.probability)} better than ${escapeHtml(baselinePlayerName)}</strong>
+      <em>${rate.betterRolls}/${rate.totalRolls} rolls</em>
+    </p>
   `;
 }
 
@@ -389,6 +429,10 @@ function formatWins(value: number): string {
 function formatDelta(value: number): string {
   const sign = value > 0 ? "+" : "";
   return `${sign}${formatWins(value)}`;
+}
+
+function formatPercent(value: number): string {
+  return `${Math.round(value * 100)}%`;
 }
 
 function escapeHtml(value: string): string {

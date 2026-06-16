@@ -65,6 +65,28 @@ export interface RerollDeltas {
   decadeRerollMedianDelta: number;
 }
 
+export interface RerollBetterOddsInput {
+  roster: Roster;
+  allPlayers: Player[];
+  currentTeam: string | null;
+  currentDecade: Decade | null;
+  baselineDeltaWins: number;
+  canSkipTeam: boolean;
+  canSkipDecade: boolean;
+}
+
+export interface RerollHitRate {
+  available: boolean;
+  betterRolls: number;
+  totalRolls: number;
+  probability: number;
+}
+
+export interface RerollBetterOdds {
+  team: RerollHitRate;
+  decade: RerollHitRate;
+}
+
 export interface SkipAdviceInput {
   bestDeltaExpectedWins: number;
   bestDeltaCeilingWins: number;
@@ -159,6 +181,42 @@ export function estimateRerollDeltas(input: RerollDeltaInput): RerollDeltas {
   return {
     teamRerollMedianDelta: median(teamDeltas),
     decadeRerollMedianDelta: median(decadeDeltas)
+  };
+}
+
+export function estimateRerollBetterOdds(input: RerollBetterOddsInput): RerollBetterOdds {
+  const empty = {
+    team: emptyRerollHitRate(input.canSkipTeam),
+    decade: emptyRerollHitRate(input.canSkipDecade)
+  };
+
+  if (!input.currentTeam || !input.currentDecade) {
+    return empty;
+  }
+
+  const currentTeam = input.currentTeam.toUpperCase();
+  const currentWins = calculateTeamResult(input.roster).wins;
+  const playersByRoll = groupPlayersByRoll(input.allPlayers);
+  const totals = rosterStatTotals(input.roster);
+  const teamDeltas: number[] = [];
+  const decadeDeltas: number[] = [];
+
+  for (const [rollKey, candidates] of playersByRoll.entries()) {
+    const [team, decade] = rollKey.split("::") as [string, Decade];
+    const delta = bestImmediateDeltaForCandidates(input.roster, candidates, totals, currentWins);
+
+    if (decade === input.currentDecade && team !== currentTeam) {
+      teamDeltas.push(delta);
+    }
+
+    if (team === currentTeam && decade !== input.currentDecade) {
+      decadeDeltas.push(delta);
+    }
+  }
+
+  return {
+    team: hitRateFromDeltas(teamDeltas, input.baselineDeltaWins, input.canSkipTeam),
+    decade: hitRateFromDeltas(decadeDeltas, input.baselineDeltaWins, input.canSkipDecade)
   };
 }
 
@@ -329,6 +387,26 @@ function median(values: number[]): number {
   const sorted = [...values].sort((left, right) => left - right);
   const middle = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
+}
+
+function emptyRerollHitRate(available: boolean): RerollHitRate {
+  return {
+    available,
+    betterRolls: 0,
+    totalRolls: 0,
+    probability: 0
+  };
+}
+
+function hitRateFromDeltas(deltas: number[], baselineDeltaWins: number, available: boolean): RerollHitRate {
+  const betterRolls = deltas.filter((delta) => delta > baselineDeltaWins).length;
+
+  return {
+    available,
+    betterRolls,
+    totalRolls: deltas.length,
+    probability: deltas.length > 0 ? betterRolls / deltas.length : 0
+  };
 }
 
 function topCeilingCandidates(roster: Roster, position: Position, legalPlayers: Player[], usedBaseSlugs: Set<string>): Player[] {

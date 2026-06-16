@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Player, Roster } from "../../src/domain/types";
 import {
   evaluateRoll,
+  estimateRerollBetterOdds,
   estimateRerollDeltas,
   recommendSkip,
   rosterGaps
@@ -226,5 +227,41 @@ describe("projections", () => {
 
     expect(deltas.teamRerollMedianDelta).toBeGreaterThan(1.5);
     expect(deltas.decadeRerollMedianDelta).toBe(0);
+  });
+
+  it("estimates better-player reroll odds while excluding already selected base slugs", () => {
+    const selectedStar = player("Selected Star", "selected-star", "SAS", "1980s", ["SG"], 35, 10, 8, 2, 1);
+    const currentPick = player("Current Pick", "current-pick", "MIN", "1990s", ["SF"], 10, 3, 2, 0.5, 0.2);
+    const betterTeamRoll = player("Better Team Roll", "better-team", "LAL", "1990s", ["SF"], 35, 10, 8, 2, 1);
+    const worseTeamRoll = player("Worse Team Roll", "worse-team", "BOS", "1990s", ["SF"], 2, 1, 1, 0, 0);
+    const selectedDuplicate = {
+      ...player("Selected Duplicate", "selected-duplicate", "CHI", "1990s", ["SF"], 40, 12, 9, 2, 1),
+      baseSlug: "selected-star"
+    };
+    const betterDecadeRoll = player("Better Decade Roll", "better-decade", "MIN", "2000s", ["SF"], 34, 10, 7, 2, 1);
+    const worseDecadeRoll = player("Worse Decade Roll", "worse-decade", "MIN", "1980s", ["SF"], 1, 1, 1, 0, 0);
+
+    const odds = estimateRerollBetterOdds({
+      roster: { SG: selectedStar },
+      allPlayers: [selectedStar, currentPick, betterTeamRoll, worseTeamRoll, selectedDuplicate, betterDecadeRoll, worseDecadeRoll],
+      currentTeam: "MIN",
+      currentDecade: "1990s",
+      baselineDeltaWins: 10,
+      canSkipTeam: true,
+      canSkipDecade: true
+    });
+
+    expect(odds.team).toMatchObject({
+      available: true,
+      betterRolls: 1,
+      totalRolls: 3
+    });
+    expect(odds.team.probability).toBeCloseTo(1 / 3);
+    expect(odds.decade).toMatchObject({
+      available: true,
+      betterRolls: 1,
+      totalRolls: 2
+    });
+    expect(odds.decade.probability).toBeCloseTo(1 / 2);
   });
 });
