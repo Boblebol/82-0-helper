@@ -79,7 +79,8 @@ function detectVisiblePlayers(doc: Document, index: PlayerIndex, team: string | 
 }
 
 function detectRoster(doc: Document, index: PlayerIndex): Roster {
-  const text = doc.querySelector('[aria-label="roster"]')?.textContent ?? doc.body.textContent ?? "";
+  const rosterRoot = doc.querySelector('[aria-label="roster"]');
+  const text = rosterRoot ? extractTextWithSeparators(rosterRoot) : doc.body.textContent ?? "";
   const roster: Roster = {};
   for (const position of POSITIONS) {
     const player = findRosterPlayerForPosition(text, position, index.players);
@@ -111,6 +112,24 @@ function findRosterPlayerForPosition(text: string, position: Position, players: 
   }
 
   return players.find((player) => segment.includes(normalizeName(player.name)));
+}
+
+function extractTextWithSeparators(root: Element): string {
+  return root.textContent
+    ? [...root.childNodes]
+        .map((node) => {
+          if (node.nodeType === Node.TEXT_NODE) {
+            return node.textContent ?? "";
+          }
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            return extractTextWithSeparators(node as Element);
+          }
+          return "";
+        })
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim()
+    : "";
 }
 
 function getVisibleCandidateElements(doc: Document): Element[] {

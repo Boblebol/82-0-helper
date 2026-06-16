@@ -78,6 +78,33 @@ describe("DOM detectors", () => {
     expect(state.roster.PF?.name).toBe("Tim Duncan");
   });
 
+  it("parses roster slots when sibling text nodes collapse without separators", () => {
+    document.body.innerHTML = `
+      <main>
+        <section aria-label="draft status">
+          <p>Classic</p>
+          <p>Round 3</p>
+          <h2>LAL 2000s</h2>
+        </section>
+        <section aria-label="players">
+          <button>Kobe Bryant 30.0 PPG 6.9 RPG 5.9 APG</button>
+        </section>
+        <section aria-label="roster">
+          <div><span>PG</span><span>Magic Johnson</span></div>
+          <div><span>SG</span><span>Empty</span></div>
+          <div><span>SF</span><span>Empty</span></div>
+          <div><span>PF</span><span>Tim Duncan</span></div>
+          <div><span>C</span><span>Empty</span></div>
+        </section>
+      </main>
+    `;
+
+    const state = detectGameState(document, index);
+
+    expect(state.roster.PG?.name).toBe("Magic Johnson");
+    expect(state.roster.PF?.name).toBe("Tim Duncan");
+  });
+
   it("detects shorthand decade labels like 00's", () => {
     document.body.innerHTML = `
       <main>
