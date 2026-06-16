@@ -275,6 +275,37 @@
   font-weight: 700;
 }
 
+.assistant-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #c8cdd2;
+}
+
+.assistant-field input,
+.assistant-field select {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid #454b50;
+  border-radius: 8px;
+  background: #11161a;
+  color: #eef1f4;
+  font: inherit;
+}
+
+.assistant-field input::placeholder {
+  color: #7f878e;
+}
+
+.assistant-field input[aria-invalid="true"],
+.assistant-field select[aria-invalid="true"] {
+  border-color: #b55362;
+  box-shadow: 0 0 0 1px rgba(181, 83, 98, 0.28);
+}
+
 .assistant-actions {
   display: flex;
   gap: 8px;
@@ -303,6 +334,7 @@
 .assistant-button--compact {
   margin-top: 10px;
   flex: 0 0 auto;
+  width: auto;
 }
 
 @media (max-width: 760px) {

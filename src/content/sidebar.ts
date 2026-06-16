@@ -1,5 +1,5 @@
 import sidebarStyles from "../styles/sidebar.css?inline";
-import type { GameState, Position } from "../domain/types";
+import { ACTIVE_DECADES, type Decade, type GameState, type Position } from "../domain/types";
 import type { CandidateRecommendation, SkipAdvice } from "../scoring/projections";
 
 export interface SidebarViewModel {
@@ -13,7 +13,7 @@ export interface SidebarViewModel {
   onResetManualState: () => void;
   onManualSave: (state: {
     team: string | null;
-    decade: string | null;
+    decade: Decade | null;
     round: number | null;
   }) => void;
 }
@@ -76,7 +76,7 @@ export function renderSidebar(root: Element | ShadowRoot, viewModel: SidebarView
         ${skipAdviceCard(viewModel.skipAdvice)}
         ${rosterCard(viewModel.state.roster)}
         ${gapsCard(viewModel.gaps)}
-        ${manualEditPanel(wasEditing)}
+        ${manualEditPanel(viewModel.state, wasEditing)}
 
         <footer class="assistant-actions">
           <button class="assistant-button" type="button" data-action="edit">Edit roster</button>
@@ -122,7 +122,12 @@ function wireEvents(root: Element | ShadowRoot, viewModel: SidebarViewModel): vo
   });
 
   root.querySelector<HTMLButtonElement>("button[data-action='save-manual']")?.addEventListener("click", () => {
-    viewModel.onManualSave(readManualPatch(root));
+    const patch = readManualPatch(root);
+    if (!patch) {
+      return;
+    }
+
+    viewModel.onManualSave(patch);
   });
 }
 
@@ -144,42 +149,93 @@ function setEditingState(
   toggleButton?.setAttribute("aria-expanded", String(shell.classList.contains("is-open")));
 }
 
-function manualEditPanel(isEditing: boolean): string {
+function manualEditPanel(state: GameState, isEditing: boolean): string {
+  const teamValue = escapeHtml(state.team ?? "");
+  const decadeValue = state.decade ?? "";
+  const roundValue = state.round == null ? "" : escapeHtml(String(state.round));
+
   return `
     <section class="assistant-card" data-assistant-edit-panel ${isEditing ? "" : "hidden"}>
       <p class="assistant-card-title">Manual correction</p>
-      <label class="assistant-field">Team <input name="team" maxlength="3" /></label>
+      <label class="assistant-field">Team <input name="team" maxlength="3" value="${teamValue}" /></label>
       <label class="assistant-field">Decade <select name="decade">
-        <option value="">Unknown</option>
-        <option value="1960s">1960s</option>
-        <option value="1970s">1970s</option>
-        <option value="1980s">1980s</option>
-        <option value="1990s">1990s</option>
-        <option value="2000s">2000s</option>
-        <option value="2010s">2010s</option>
-        <option value="2020s">2020s</option>
+        <option value=""${decadeValue === "" ? " selected" : ""}>Unknown</option>
+        ${ACTIVE_DECADES.map((decade) => `<option value="${decade}"${decadeValue === decade ? " selected" : ""}>${decade}</option>`).join("")}
       </select></label>
-      <label class="assistant-field">Round <input name="round" type="number" min="1" max="5" /></label>
-      <button type="button" data-action="save-manual">Save</button>
+      <label class="assistant-field">Round <input name="round" type="number" min="1" max="5" value="${roundValue}" /></label>
+      <button class="assistant-button assistant-button--compact" type="button" data-action="save-manual">Save</button>
     </section>
   `;
 }
 
 function readManualPatch(root: Element | ShadowRoot): {
   team: string | null;
-  decade: string | null;
+  decade: Decade | null;
   round: number | null;
-} {
-  const teamValue = root.querySelector<HTMLInputElement>("input[name='team']")?.value.trim() ?? "";
-  const decadeValue = root.querySelector<HTMLSelectElement>("select[name='decade']")?.value ?? "";
-  const roundValue = root.querySelector<HTMLInputElement>("input[name='round']")?.value ?? "";
-  const parsedRound = roundValue === "" ? Number.NaN : Number(roundValue);
+} | null {
+  const teamInput = root.querySelector<HTMLInputElement>("input[name='team']");
+  const decadeSelect = root.querySelector<HTMLSelectElement>("select[name='decade']");
+  const roundInput = root.querySelector<HTMLInputElement>("input[name='round']");
+
+  if (!teamInput || !decadeSelect || !roundInput) {
+    return null;
+  }
+
+  const teamValue = teamInput.value.trim();
+  const decadeValue = decadeSelect.value;
+  const roundValue = roundInput.value.trim();
+
+  const round = parseRound(roundValue);
+  const decade = parseDecade(decadeValue);
+  const roundValid = roundValue === "" || round !== null;
+  const decadeValid = decadeValue === "" || decade !== null;
+
+  if (roundValid) {
+    roundInput.removeAttribute("aria-invalid");
+  } else {
+    roundInput.setAttribute("aria-invalid", "true");
+  }
+
+  if (decadeValid) {
+    decadeSelect.removeAttribute("aria-invalid");
+  } else {
+    decadeSelect.setAttribute("aria-invalid", "true");
+  }
+
+  if (!roundValid || !decadeValid) {
+    return null;
+  }
+
+  teamInput.removeAttribute("aria-invalid");
+  decadeSelect.removeAttribute("aria-invalid");
+  roundInput.removeAttribute("aria-invalid");
 
   return {
     team: teamValue === "" ? null : teamValue.toUpperCase(),
-    decade: decadeValue === "" ? null : decadeValue,
-    round: Number.isFinite(parsedRound) ? parsedRound : null
+    decade,
+    round
   };
+}
+
+function parseRound(value: string): number | null {
+  if (value === "") {
+    return null;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 5) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function parseDecade(value: string): Decade | null {
+  if (value === "") {
+    return null;
+  }
+
+  return ACTIVE_DECADES.includes(value as Decade) ? (value as Decade) : null;
 }
 
 function errorCard(error: string): string {

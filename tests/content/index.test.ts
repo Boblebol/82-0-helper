@@ -184,6 +184,79 @@ describe("content entrypoint", () => {
     expect(host?.shadowRoot?.textContent).toContain("Kobe Bryant");
   });
 
+  it("saves partial manual corrections without clearing detected state", async () => {
+    const memory = new Map<string, unknown>();
+    const set = vi.fn(async (value: Record<string, unknown>) => {
+      for (const [key, stored] of Object.entries(value)) memory.set(key, stored);
+    });
+    const get = vi.fn(async (key: string) => ({ [key]: memory.get(key) }));
+    const remove = vi.fn(async (key: string) => {
+      memory.delete(key);
+    });
+
+    vi.stubGlobal("chrome", {
+      storage: {
+        local: {
+          get,
+          set,
+          remove
+        }
+      }
+    });
+
+    const fetchPlayers = vi.fn(async () => ({
+      players: [kobe],
+      byRoll: new Map([
+        ["LAL::2000s", [kobe]]
+      ]),
+      byName: new Map()
+    }));
+
+    document.body.innerHTML = `
+      <main>
+        <p>Classic</p>
+        <p>Round 1</p>
+        <h2>LAL 2000s</h2>
+        <button>Kobe Bryant 30.0 PPG</button>
+      </main>
+    `;
+
+    await startAssistant({
+      fetchPlayers,
+      observeMutations: false
+    });
+
+    const host = document.getElementById("assistant-82-0-host");
+    const shadow = host?.shadowRoot;
+
+    shadow?.querySelector<HTMLButtonElement>("button[data-action='edit']")?.click();
+
+    const team = shadow?.querySelector<HTMLInputElement>("input[name='team']");
+    const decade = shadow?.querySelector<HTMLSelectElement>("select[name='decade']");
+    const round = shadow?.querySelector<HTMLInputElement>("input[name='round']");
+
+    if (!team || !decade || !round) {
+      throw new Error("manual controls missing");
+    }
+
+    round.value = "4";
+
+    shadow?.querySelector<HTMLButtonElement>("button[data-action='save-manual']")?.click();
+
+    for (let index = 0; index < 5; index++) {
+      await Promise.resolve();
+    }
+
+    expect(set).toHaveBeenCalled();
+    expect(memory.get("82-0-assistant-manual-state")).toEqual({
+      team: "LAL",
+      decade: "2000s",
+      round: 4
+    });
+    expect(fetchPlayers).toHaveBeenCalledTimes(1);
+    expect(host?.shadowRoot?.textContent).toContain("Round 4");
+  });
+
   it("cancels a stale debounced mutation rerender when a newer start begins", async () => {
     vi.useFakeTimers();
 

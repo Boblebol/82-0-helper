@@ -110,7 +110,7 @@ async function renderWithState(
       await saveManualState({
         ...state.manual,
         team: manualPatch.team,
-        decade: manualPatch.decade as Decade | null,
+        decade: manualPatch.decade,
         round: manualPatch.round
       });
 
