@@ -61,7 +61,7 @@ function detectDecade(text: string): Decade | null {
 
 function detectVisiblePlayers(doc: Document, index: PlayerIndex, team: string | null, decade: Decade | null): Player[] {
   const scopedPlayers = team && decade ? index.byRoll.get(`${team}::${decade}`) ?? [] : index.players;
-  const elements = getVisibleCandidateElements(doc, scopedPlayers, decade);
+  const elements = getVisibleCandidateElements(doc, decade);
   const visiblePlayers: Player[] = [];
 
   for (const element of elements) {
@@ -134,7 +134,7 @@ function extractTextWithSeparators(root: Element): string {
     : "";
 }
 
-function getVisibleCandidateElements(doc: Document, players: Player[], decade: Decade | null): Element[] {
+function getVisibleCandidateElements(doc: Document, decade: Decade | null): Element[] {
   const labeledContainers = [...doc.querySelectorAll("[aria-label]")].filter((element) =>
     isRealOptionsLabel(element.getAttribute("aria-label") ?? "")
   );
