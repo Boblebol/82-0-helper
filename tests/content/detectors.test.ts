@@ -26,6 +26,74 @@ describe("DOM detectors", () => {
     expect(state.confidence).toBe("high");
   });
 
+  it("ignores roster-only players when detecting visible draft options", () => {
+    document.body.innerHTML = `
+      <main>
+        <section aria-label="draft status">
+          <p>Classic</p>
+          <p>Round 3</p>
+          <h2>LAL 2000s</h2>
+        </section>
+        <section aria-label="players">
+          <button>Kobe Bryant 30.0 PPG 6.9 RPG 5.9 APG</button>
+        </section>
+        <section aria-label="roster">
+          <div>PG Magic Johnson</div>
+          <div>SG Shaquille O'Neal</div>
+          <div>SF Empty</div>
+          <div>PF Tim Duncan</div>
+          <div>C Empty</div>
+        </section>
+      </main>
+    `;
+
+    const state = detectGameState(document, index);
+
+    expect(state.visiblePlayers.map((player) => player.name)).toEqual(["Kobe Bryant"]);
+  });
+
+  it("parses roster slots with newlines, colons, and compact text", () => {
+    document.body.innerHTML = `
+      <main>
+        <section aria-label="draft status">
+          <p>Classic</p>
+          <p>Round 3</p>
+          <h2>LAL 2000s</h2>
+        </section>
+        <section aria-label="players">
+          <button>Kobe Bryant 30.0 PPG 6.9 RPG 5.9 APG</button>
+        </section>
+        <section aria-label="roster">
+          <div>PG\nMagic Johnson</div>
+          <div>SG: Shaquille O'Neal</div>
+          <div>SF Empty PF Tim Duncan C Empty</div>
+        </section>
+      </main>
+    `;
+
+    const state = detectGameState(document, index);
+
+    expect(state.roster.PG?.name).toBe("Magic Johnson");
+    expect(state.roster.SG?.name).toBe("Shaquille O'Neal");
+    expect(state.roster.PF?.name).toBe("Tim Duncan");
+  });
+
+  it("detects shorthand decade labels like 00's", () => {
+    document.body.innerHTML = `
+      <main>
+        <section aria-label="draft status">
+          <p>Classic</p>
+          <p>Round 3</p>
+          <h2>LAL 00's</h2>
+        </section>
+      </main>
+    `;
+
+    const state = detectGameState(document, index);
+
+    expect(state.decade).toBe("2000s");
+  });
+
   it("returns low confidence when the current roll is missing", () => {
     document.body.innerHTML = readFileSync("tests/fixtures/incomplete-state.html", "utf8");
 

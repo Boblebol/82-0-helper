@@ -11,6 +11,15 @@ import { normalizeName, type PlayerIndex } from "../data/players";
 
 const TEAM_PATTERN = /\b(ATL|BOS|BKN|CHA|CHI|CLE|DAL|DEN|DET|GSW|HOU|IND|LAC|LAL|MEM|MIA|MIL|MIN|NOP|NYK|OKC|ORL|PHI|PHX|POR|SAC|SAS|TOR|UTA|WAS)\b/;
 const ROUND_PATTERN = /\bRound\s+([1-5])\b/i;
+const DECADE_PATTERNS: Array<[Decade, RegExp]> = [
+  ["1960s", /\b(?:1960s|60s|60's)\b/i],
+  ["1970s", /\b(?:1970s|70s|70's)\b/i],
+  ["1980s", /\b(?:1980s|80s|80's)\b/i],
+  ["1990s", /\b(?:1990s|90s|90's)\b/i],
+  ["2000s", /\b(?:2000s|00s|00's)\b/i],
+  ["2010s", /\b(?:2010s|10s|10's)\b/i],
+  ["2020s", /\b(?:2020s|20s|20's)\b/i]
+];
 
 export function detectGameState(doc: Document, index: PlayerIndex): DetectedGameState {
   const text = doc.body.textContent ?? "";
@@ -41,19 +50,24 @@ function detectTeam(text: string): string | null {
 }
 
 function detectDecade(text: string): Decade | null {
+  for (const [decade, pattern] of DECADE_PATTERNS) {
+    if (pattern.test(text)) {
+      return decade;
+    }
+  }
+
   return ACTIVE_DECADES.find((decade) => text.includes(decade)) ?? null;
 }
 
 function detectVisiblePlayers(doc: Document, index: PlayerIndex, team: string | null, decade: Decade | null): Player[] {
-  const elements = [...doc.querySelectorAll("button, [role='button'], li, article, div")];
-  const visibleText = elements.map((element) => element.textContent ?? "").join("\n").toLowerCase();
+  const elements = getVisibleCandidateElements(doc);
   const scopedPlayers = team && decade ? index.byRoll.get(`${team}::${decade}`) ?? [] : index.players;
   const visiblePlayers: Player[] = [];
 
   for (const element of elements) {
     const elementText = (element.textContent ?? "").toLowerCase();
     for (const player of scopedPlayers) {
-      if (visibleText.includes(normalizeName(player.name)) && elementText.includes(normalizeName(player.name))) {
+      if (elementText.includes(normalizeName(player.name))) {
         if (!visiblePlayers.includes(player)) {
           visiblePlayers.push(player);
         }
@@ -77,12 +91,43 @@ function detectRoster(doc: Document, index: PlayerIndex): Roster {
 }
 
 function findRosterPlayerForPosition(text: string, position: Position, players: Player[]): Player | undefined {
-  const lines = text.split(/\r?\n/).map((line) => line.trim());
-  const matchingLine = lines.find((line) => line.startsWith(`${position} `));
-  if (!matchingLine) {
+  const matches = [...text.matchAll(/\b(PG|SG|SF|PF|C)\b/g)];
+  const positionMatchIndex = matches.findIndex((match) => match[1] === position);
+  if (positionMatchIndex < 0) {
     return undefined;
   }
 
-  const segment = matchingLine.toLowerCase();
+  const start = (matches[positionMatchIndex].index ?? 0) + position.length;
+  const end = matches[positionMatchIndex + 1]?.index ?? text.length;
+  const segment = text
+    .slice(start, end)
+    .replace(/^[\s:.-]+/, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+
+  if (!segment || /^empty\b/i.test(segment)) {
+    return undefined;
+  }
+
   return players.find((player) => segment.includes(normalizeName(player.name)));
+}
+
+function getVisibleCandidateElements(doc: Document): Element[] {
+  const candidates = [...doc.querySelectorAll("button, [role='button'], li, article, section, div")].filter(
+    (element) => !isInExcludedArea(element)
+  );
+
+  return candidates.filter((element) => !candidates.some((other) => other !== element && element.contains(other)));
+}
+
+function isInExcludedArea(element: Element): boolean {
+  for (let current: Element | null = element; current; current = current.parentElement) {
+    const label = current.getAttribute("aria-label");
+    if (label && /(roster|court|sidebar)/i.test(label)) {
+      return true;
+    }
+  }
+
+  return false;
 }
