@@ -91,7 +91,7 @@ async function renderWithState(
   });
   const skipAdvice = error
     ? fallbackSkipAdvice(error)
-    : bestSkipAdvice(evaluation.recommendations[0], rerollDeltas);
+    : bestSkipAdvice(evaluation.recommendations[0], rerollDeltas, effectiveState);
 
   renderSidebar(root, {
     state: effectiveState,
@@ -134,7 +134,7 @@ async function renderWithState(
   });
 }
 
-function bestSkipAdvice(recommendation: CandidateRecommendation | undefined, rerollDeltas: RerollDeltas): SkipAdvice {
+function bestSkipAdvice(recommendation: CandidateRecommendation | undefined, rerollDeltas: RerollDeltas, state: GameState): SkipAdvice {
   if (!recommendation) {
     return {
       kind: "keep",
@@ -147,7 +147,9 @@ function bestSkipAdvice(recommendation: CandidateRecommendation | undefined, rer
     bestDeltaCeilingWins: recommendation.deltaCeilingWins,
     teamRerollMedianDelta: rerollDeltas.teamRerollMedianDelta,
     decadeRerollMedianDelta: rerollDeltas.decadeRerollMedianDelta,
-    ceilingWins: recommendation.ceilingWins
+    ceilingWins: recommendation.ceilingWins,
+    canSkipTeam: !state.skipsUsed.team,
+    canSkipDecade: !state.skipsUsed.decade
   });
 }
 

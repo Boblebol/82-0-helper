@@ -38,6 +38,7 @@ const state: GameState = {
   decade: "2000s",
   visiblePlayers: [kobe],
   roster: {},
+  skipsUsed: { team: false, decade: false },
   confidence: "high",
   manual: {}
 };

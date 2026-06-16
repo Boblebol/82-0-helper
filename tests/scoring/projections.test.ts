@@ -121,7 +121,9 @@ describe("projections", () => {
       bestDeltaCeilingWins: 3,
       teamRerollMedianDelta: 8,
       decadeRerollMedianDelta: 7,
-      ceilingWins: 82
+      ceilingWins: 82,
+      canSkipTeam: true,
+      canSkipDecade: true
     });
 
     expect(advice.kind).toBe("keep");
@@ -133,7 +135,9 @@ describe("projections", () => {
       bestDeltaCeilingWins: 2,
       teamRerollMedianDelta: 6,
       decadeRerollMedianDelta: 5,
-      ceilingWins: 82
+      ceilingWins: 82,
+      canSkipTeam: true,
+      canSkipDecade: true
     });
 
     expect(advice.kind).toBe("skip-team");
@@ -145,7 +149,9 @@ describe("projections", () => {
       bestDeltaCeilingWins: 2,
       teamRerollMedianDelta: 5,
       decadeRerollMedianDelta: 6,
-      ceilingWins: 82
+      ceilingWins: 82,
+      canSkipTeam: true,
+      canSkipDecade: true
     });
 
     expect(advice.kind).toBe("skip-decade");
@@ -157,10 +163,54 @@ describe("projections", () => {
       bestDeltaCeilingWins: 0,
       teamRerollMedianDelta: 3,
       decadeRerollMedianDelta: 3,
-      ceilingWins: 80
+      ceilingWins: 80,
+      canSkipTeam: true,
+      canSkipDecade: true
     });
 
     expect(advice.kind).toBe("skip-only-if-chasing-82-0");
+  });
+
+  it("does not advise a team reroll after the team reroll is already used", () => {
+    const advice = recommendSkip({
+      bestDeltaExpectedWins: 4,
+      bestDeltaCeilingWins: 2,
+      teamRerollMedianDelta: 7,
+      decadeRerollMedianDelta: 4,
+      ceilingWins: 82,
+      canSkipTeam: false,
+      canSkipDecade: true
+    });
+
+    expect(advice.kind).toBe("keep");
+  });
+
+  it("falls back to decade reroll when team reroll is stronger but already used", () => {
+    const advice = recommendSkip({
+      bestDeltaExpectedWins: 4,
+      bestDeltaCeilingWins: 2,
+      teamRerollMedianDelta: 8,
+      decadeRerollMedianDelta: 6,
+      ceilingWins: 82,
+      canSkipTeam: false,
+      canSkipDecade: true
+    });
+
+    expect(advice.kind).toBe("skip-decade");
+  });
+
+  it("keeps when both rerolls are already used even if the ceiling path is capped", () => {
+    const advice = recommendSkip({
+      bestDeltaExpectedWins: 3,
+      bestDeltaCeilingWins: 0,
+      teamRerollMedianDelta: 3,
+      decadeRerollMedianDelta: 3,
+      ceilingWins: 80,
+      canSkipTeam: false,
+      canSkipDecade: false
+    });
+
+    expect(advice.kind).toBe("keep");
   });
 
   it("estimates stronger same-decade team reroll distributions", () => {

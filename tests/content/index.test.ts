@@ -328,6 +328,35 @@ describe("content entrypoint", () => {
     expect(host?.shadowRoot?.textContent).toContain("skip team");
   });
 
+  it("does not render skip-team advice when the team reroll is already consumed", async () => {
+    document.body.innerHTML = `
+      <main>
+        <p>Classic</p>
+        <p>Round 1/5</p>
+        <h2>MIN 1990s</h2>
+        <button disabled>Team</button>
+        <button>Era</button>
+        <button>Weak Wing 2.0 PPG 1.0 RPG 1.0 APG</button>
+      </main>
+    `;
+
+    await startAssistant({
+      fetchPlayers: async () => ({
+        players: [weakWing, eliteWing],
+        byRoll: new Map([
+          ["MIN::1990s", [weakWing]],
+          ["LAL::1990s", [eliteWing]]
+        ]),
+        byName: new Map()
+      }),
+      observeMutations: false
+    });
+
+    const host = document.getElementById("assistant-82-0-host");
+    expect(host?.shadowRoot?.textContent).not.toContain("skip team");
+    expect(host?.shadowRoot?.textContent).toContain("keep");
+  });
+
   it("saves partial manual corrections without clearing detected state", async () => {
     const memory = new Map<string, unknown>();
     const set = vi.fn(async (value: Record<string, unknown>) => {

@@ -312,6 +312,29 @@ describe("DOM detectors", () => {
     expect(state.roster.SG?.name).toBe("Pete Maravich");
   });
 
+  it("detects consumed team and available decade rerolls from visible buttons", () => {
+    document.body.innerHTML = `
+      <main>
+        <span>Round 2/5</span>
+        <section>
+          <button disabled>Team</button>
+          <button>Era</button>
+        </section>
+        <section aria-label="players">
+          <button>
+            <span>Tony Campbell</span>
+            <span>MIN · 1990s</span>
+            <span>20.6 PPG</span>
+          </button>
+        </section>
+      </main>
+    `;
+
+    const state = detectGameState(document, index);
+
+    expect(state.skipsUsed).toEqual({ team: true, decade: false });
+  });
+
   it("detects shorthand decade labels like 00's", () => {
     document.body.innerHTML = `
       <main>

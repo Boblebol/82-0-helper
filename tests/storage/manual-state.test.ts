@@ -50,6 +50,7 @@ describe("manual state", () => {
       decade: "2000s",
       visiblePlayers: [],
       roster: {},
+      skipsUsed: { team: false, decade: false },
       confidence: "high"
     };
 
@@ -69,6 +70,7 @@ describe("manual state", () => {
       decade: "2000s",
       visiblePlayers: [],
       roster: {},
+      skipsUsed: { team: false, decade: false },
       confidence: "high"
     };
 

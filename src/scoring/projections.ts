@@ -71,6 +71,8 @@ export interface SkipAdviceInput {
   teamRerollMedianDelta: number;
   decadeRerollMedianDelta: number;
   ceilingWins: number;
+  canSkipTeam: boolean;
+  canSkipDecade: boolean;
 }
 
 export interface SkipAdvice {
@@ -114,15 +116,15 @@ export function recommendSkip(input: SkipAdviceInput): SkipAdvice {
   const teamAdvantage = input.teamRerollMedianDelta - input.bestDeltaExpectedWins;
   const decadeAdvantage = input.decadeRerollMedianDelta - input.bestDeltaExpectedWins;
 
-  if (teamAdvantage >= 1.5 && teamAdvantage >= decadeAdvantage) {
+  if (input.canSkipTeam && teamAdvantage >= 1.5 && (!input.canSkipDecade || teamAdvantage >= decadeAdvantage)) {
     return { kind: "skip-team", reason: "Rerolling the team has a better expected candidate distribution." };
   }
 
-  if (decadeAdvantage >= 1.5) {
+  if (input.canSkipDecade && decadeAdvantage >= 1.5) {
     return { kind: "skip-decade", reason: "Rerolling the decade better matches the current roster gaps." };
   }
 
-  if (input.ceilingWins < 82 && input.bestDeltaExpectedWins > 0 && input.bestDeltaCeilingWins < 1) {
+  if ((input.canSkipTeam || input.canSkipDecade) && input.ceilingWins < 82 && input.bestDeltaExpectedWins > 0 && input.bestDeltaCeilingWins < 1) {
     return { kind: "skip-only-if-chasing-82-0", reason: "This is fine for expected wins but lowers the 82-0 ceiling path." };
   }
 

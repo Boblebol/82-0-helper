@@ -38,6 +38,11 @@ export interface Player {
 
 export type Roster = Partial<Record<Position, Player>>;
 
+export interface SkipState {
+  team: boolean;
+  decade: boolean;
+}
+
 export interface DetectedGameState {
   mode: "classic" | "hoopiq" | "unknown";
   round: number | null;
@@ -45,6 +50,7 @@ export interface DetectedGameState {
   decade: Decade | null;
   visiblePlayers: Player[];
   roster: Roster;
+  skipsUsed: SkipState;
   confidence: "high" | "low";
 }
 

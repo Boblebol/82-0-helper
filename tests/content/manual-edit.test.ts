@@ -9,6 +9,7 @@ const state: GameState = {
   decade: null,
   visiblePlayers: [],
   roster: {},
+  skipsUsed: { team: false, decade: false },
   confidence: "low",
   manual: {}
 };
@@ -20,6 +21,7 @@ const seededState: GameState = {
   decade: "2000s",
   visiblePlayers: [],
   roster: {},
+  skipsUsed: { team: false, decade: false },
   confidence: "high",
   manual: {}
 };

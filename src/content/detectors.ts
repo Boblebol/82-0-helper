@@ -32,9 +32,10 @@ export function detectGameState(doc: Document, index: PlayerIndex): DetectedGame
   const decade = waitingForSpin ? null : visibleRoll?.decade ?? detectDecade(text);
   const visiblePlayers = detectVisiblePlayers(doc, index, team, decade);
   const roster = detectRoster(doc, index);
+  const skipsUsed = detectSkipsUsed(doc);
   const confidence = team && decade ? "high" : "low";
 
-  return { mode, round, team, decade, visiblePlayers, roster, confidence };
+  return { mode, round, team, decade, visiblePlayers, roster, skipsUsed, confidence };
 }
 
 function detectMode(text: string): DetectedGameState["mode"] {
@@ -70,6 +71,26 @@ function isWaitingForSpin(text: string): boolean {
     !hasStatSignal(text) &&
     !/\bplayers?\s+available\b/i.test(text)
   );
+}
+
+function detectSkipsUsed(doc: Document): { team: boolean; decade: boolean } {
+  const skipsUsed = { team: false, decade: false };
+  const buttons = [...doc.querySelectorAll("button")].filter((button) => isVisibleElement(button) && !isInExcludedArea(button));
+
+  for (const button of buttons) {
+    const label = extractVisibleText(button).trim().toLowerCase();
+    const isDisabled = button.disabled || button.getAttribute("aria-disabled") === "true";
+
+    if (label === "team") {
+      skipsUsed.team = skipsUsed.team || isDisabled;
+    }
+
+    if (label === "era" || label === "decade") {
+      skipsUsed.decade = skipsUsed.decade || isDisabled;
+    }
+  }
+
+  return skipsUsed;
 }
 
 function detectVisibleRoll(doc: Document): { team: string; decade: Decade } | null {
