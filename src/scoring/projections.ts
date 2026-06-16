@@ -1,5 +1,7 @@
 import type { Player, Position, Roster } from "../domain/types";
-import { calculateTeamResult, canPlayerPlayPosition, openPositions, placePlayer, rosterPlayers } from "./formula";
+import { calculateTeamResult, canPlayerPlayPosition, openPositions, placePlayer, rosterPlayers, type TeamResult } from "./formula";
+
+const CEILING_CANDIDATES_PER_POSITION = 12;
 
 export interface RollEvaluationInput {
   roster: Roster;
@@ -40,17 +42,11 @@ export interface SkipAdvice {
 
 export function evaluateRoll(input: RollEvaluationInput): RollEvaluation {
   const currentWins = calculateTeamResult(input.roster).wins;
+  const selectedBaseSlugs = new Set(rosterPlayers(input.roster).map((player) => player.baseSlug));
   const recommendations = input.currentCandidates
+    .filter((player) => !selectedBaseSlugs.has(player.baseSlug))
     .flatMap((player) => bestPlacementForPlayer(input.roster, player, input.allPlayers, currentWins))
-    .sort((left, right) => {
-      if (right.deltaExpectedWins !== left.deltaExpectedWins) {
-        return right.deltaExpectedWins - left.deltaExpectedWins;
-      }
-      if (right.deltaCeilingWins !== left.deltaCeilingWins) {
-        return right.deltaCeilingWins - left.deltaCeilingWins;
-      }
-      return 0;
-    })
+    .sort(compareRecommendations)
     .slice(0, 5);
 
   return {
@@ -118,11 +114,15 @@ function bestPlacementForPlayer(roster: Roster, player: Player, allPlayers: Play
         ceilingRoster
       };
     })
-    .sort((left, right) => right.expectedWins - left.expectedWins)
+    .sort(compareRecommendations)
     .slice(0, 1);
 }
 
 function completeRoster(roster: Roster, allPlayers: Player[], mode: "expected" | "ceiling"): Roster {
+  if (mode === "ceiling") {
+    return completeCeilingRoster(roster, allPlayers);
+  }
+
   let completed = { ...roster };
   const usedBaseSlugs = new Set(rosterPlayers(completed).map((player) => player.baseSlug));
 
@@ -133,7 +133,7 @@ function completeRoster(roster: Roster, allPlayers: Player[], mode: "expected" |
       .map((player) => ({ player, wins: calculateTeamResult(placePlayer(completed, position, player)).wins }))
       .sort((left, right) => right.wins - left.wins);
 
-    const chosen = mode === "ceiling" ? candidates[0] : medianTopQuintile(candidates);
+    const chosen = medianTopQuintile(candidates);
     if (chosen) {
       completed = placePlayer(completed, position, chosen.player);
       usedBaseSlugs.add(chosen.player.baseSlug);
@@ -141,6 +141,74 @@ function completeRoster(roster: Roster, allPlayers: Player[], mode: "expected" |
   }
 
   return completed;
+}
+
+function completeCeilingRoster(roster: Roster, allPlayers: Player[]): Roster {
+  const positions = openPositions(roster);
+  const initiallyUsedBaseSlugs = new Set(rosterPlayers(roster).map((player) => player.baseSlug));
+  const candidatesByPosition = new Map(
+    positions.map((position) => [
+      position,
+      allPlayers
+        .filter((player) => !initiallyUsedBaseSlugs.has(player.baseSlug))
+        .filter((player) => canPlayerPlayPosition(player, position))
+        .map((player) => ({ player, result: calculateTeamResult(placePlayer(roster, position, player)) }))
+        .sort((left, right) => compareTeamResults(left.result, right.result))
+        .slice(0, CEILING_CANDIDATES_PER_POSITION)
+        .map(({ player }) => player)
+    ])
+  );
+
+  let bestRoster = roster;
+  let bestResult = calculateTeamResult(bestRoster);
+
+  function search(index: number, currentRoster: Roster, usedBaseSlugs: Set<string>): void {
+    if (index >= positions.length) {
+      const result = calculateTeamResult(currentRoster);
+      if (isBetterTeamResult(result, bestResult)) {
+        bestRoster = currentRoster;
+        bestResult = result;
+      }
+      return;
+    }
+
+    const position = positions[index];
+    search(index + 1, currentRoster, usedBaseSlugs);
+
+    for (const player of candidatesByPosition.get(position) ?? []) {
+      if (usedBaseSlugs.has(player.baseSlug)) {
+        continue;
+      }
+
+      usedBaseSlugs.add(player.baseSlug);
+      search(index + 1, placePlayer(currentRoster, position, player), usedBaseSlugs);
+      usedBaseSlugs.delete(player.baseSlug);
+    }
+  }
+
+  search(0, roster, initiallyUsedBaseSlugs);
+  return bestRoster;
+}
+
+function compareRecommendations(left: CandidateRecommendation, right: CandidateRecommendation): number {
+  if (right.deltaExpectedWins !== left.deltaExpectedWins) {
+    return right.deltaExpectedWins - left.deltaExpectedWins;
+  }
+  if (right.deltaCeilingWins !== left.deltaCeilingWins) {
+    return right.deltaCeilingWins - left.deltaCeilingWins;
+  }
+  return 0;
+}
+
+function compareTeamResults(left: TeamResult, right: TeamResult): number {
+  if (right.wins !== left.wins) {
+    return right.wins - left.wins;
+  }
+  return right.teamRating - left.teamRating;
+}
+
+function isBetterTeamResult(candidate: TeamResult, currentBest: TeamResult): boolean {
+  return candidate.wins > currentBest.wins || (candidate.wins === currentBest.wins && candidate.teamRating > currentBest.teamRating);
 }
 
 function medianTopQuintile(candidates: Array<{ player: Player; wins: number }>): { player: Player; wins: number } | undefined {

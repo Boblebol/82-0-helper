@@ -28,6 +28,10 @@ const shaq = player("Shaquille O'Neal", "shaq", "LAL", "2000s", ["C"], 29.7, 13.
 const rolePlayer = player("Role Player", "role", "LAL", "2000s", ["SF"], 11, 4, 2, 0.6, 0.2);
 const guard = player("Elite Guard", "guard", "BOS", "1980s", ["PG"], 25, 5, 11, 2.1, 0.3);
 const forward = player("Elite Forward", "forward", "BOS", "1980s", ["PF"], 24, 12, 4, 1.2, 1.8);
+const starterWing = player("Starter Wing", "starter", "NYK", "1990s", ["SF"], 5, 2, 1, 0, 0);
+const flexibleBig = player("Flexible Big", "flex", "NYK", "1990s", ["PG", "C"], 30, 10, 8, 1, 1);
+const solidGuard = player("Solid Guard", "solid-guard", "NYK", "1990s", ["PG"], 20, 5, 8, 1, 0.3);
+const replacementCenter = player("Replacement Center", "replacement-center", "NYK", "1990s", ["C"], 1, 1, 0, 0, 0);
 
 describe("projections", () => {
   it("ranks candidates by final outcome and preserves roll order on projection ties", () => {
@@ -55,6 +59,29 @@ describe("projections", () => {
     expect(Object.values(result.recommendations[0].expectedRoster).filter((drafted) => drafted?.id === "kobe")).toHaveLength(1);
   });
 
+  it("does not recommend current candidates already selected by base slug", () => {
+    const duplicateKobe: Player = { ...kobe, id: "kobe-duplicate", name: "Duplicate Kobe" };
+    const result = evaluateRoll({
+      roster: { SG: kobe },
+      currentCandidates: [duplicateKobe, shaq],
+      allPlayers: [duplicateKobe, shaq, guard, forward]
+    });
+
+    expect(result.recommendations.map((recommendation) => recommendation.player.baseSlug)).not.toContain("kobe");
+    expect(result.recommendations[0].player.id).toBe("shaq");
+  });
+
+  it("searches ceiling assignments instead of greedily consuming flexible players", () => {
+    const result = evaluateRoll({
+      roster: {},
+      currentCandidates: [starterWing],
+      allPlayers: [starterWing, flexibleBig, solidGuard, replacementCenter]
+    });
+
+    expect(result.recommendations[0].ceilingRoster.PG?.id).toBe("solid-guard");
+    expect(result.recommendations[0].ceilingRoster.C?.id).toBe("flex");
+  });
+
   it("identifies roster gaps by weakest category share", () => {
     expect(rosterGaps({ C: shaq })).toEqual(["STL", "AST", "PPG"]);
   });
@@ -69,5 +96,41 @@ describe("projections", () => {
     });
 
     expect(advice.kind).toBe("keep");
+  });
+
+  it("returns skip-team advice when team reroll has the best material advantage", () => {
+    const advice = recommendSkip({
+      bestDeltaExpectedWins: 4,
+      bestDeltaCeilingWins: 2,
+      teamRerollMedianDelta: 6,
+      decadeRerollMedianDelta: 5,
+      ceilingWins: 82
+    });
+
+    expect(advice.kind).toBe("skip-team");
+  });
+
+  it("returns skip-decade advice when decade reroll has a material advantage", () => {
+    const advice = recommendSkip({
+      bestDeltaExpectedWins: 4,
+      bestDeltaCeilingWins: 2,
+      teamRerollMedianDelta: 5,
+      decadeRerollMedianDelta: 6,
+      ceilingWins: 82
+    });
+
+    expect(advice.kind).toBe("skip-decade");
+  });
+
+  it("returns chase-only skip advice when expected value is fine but ceiling is capped", () => {
+    const advice = recommendSkip({
+      bestDeltaExpectedWins: 3,
+      bestDeltaCeilingWins: 0,
+      teamRerollMedianDelta: 3,
+      decadeRerollMedianDelta: 3,
+      ceilingWins: 80
+    });
+
+    expect(advice.kind).toBe("skip-only-if-chasing-82-0");
   });
 });
