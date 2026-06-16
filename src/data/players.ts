@@ -13,7 +13,10 @@ export async function loadPlayers(fetchImpl: typeof fetch = fetch): Promise<Play
   if (!response.ok) {
     throw new Error(`Failed to fetch players: ${response.status}`);
   }
-  const raw = (await response.json()) as RawPlayer[];
+  const raw = (await response.json()) as unknown;
+  if (!Array.isArray(raw)) {
+    throw new Error("Invalid players payload");
+  }
   return normalizePlayers(raw);
 }
 
@@ -25,7 +28,12 @@ export function normalizePlayers(rawPlayers: unknown[]): PlayerIndex {
   for (const player of players) {
     const rollKey = toRollKey(player.team, player.decade);
     byRoll.set(rollKey, [...(byRoll.get(rollKey) ?? []), player]);
-    byName.set(normalizeName(player.name), player);
+
+    const nameKey = normalizeName(player.name);
+    const existingNamePlayer = byName.get(nameKey);
+    if (!existingNamePlayer || comparePlayerStrength(player, existingNamePlayer) < 0) {
+      byName.set(nameKey, player);
+    }
   }
 
   for (const [key, rollPlayers] of byRoll.entries()) {
@@ -78,14 +86,26 @@ function normalizePlayer(raw: unknown): Player[] {
   ];
 }
 
-function normalizePositions(rawPositions: Array<string | null> | undefined, fallback: string): Position[] {
-  const values = rawPositions?.length ? rawPositions : [fallback];
+function normalizePositions(rawPositions: unknown, primary: string): Position[] {
+  const values = [primary, ...(Array.isArray(rawPositions) ? rawPositions : [])];
   const positions = values.filter((value): value is Position => POSITIONS.includes(value as Position));
   return [...new Set(positions)];
 }
 
 function isDecade(value: string): value is Decade {
   return ACTIVE_DECADES.includes(value as Decade);
+}
+
+function comparePlayerStrength(left: Player, right: Player): number {
+  const scoreDifference = playerScore(right) - playerScore(left);
+  if (scoreDifference !== 0) {
+    return scoreDifference;
+  }
+  return left.id.localeCompare(right.id);
+}
+
+function playerScore(player: Player): number {
+  return player.ppg + player.rpg + player.apg;
 }
 
 function isFiniteNumber(value: unknown): value is number {
