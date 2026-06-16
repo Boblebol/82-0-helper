@@ -10,22 +10,40 @@ export interface StartOptions {
   observeMutations?: boolean;
 }
 
+interface DebouncedCallback {
+  trigger: () => void;
+  cancel: () => void;
+}
+
 let activeObserver: MutationObserver | null = null;
+let activeDebouncedCallback: DebouncedCallback | null = null;
+let activeRunId = 0;
 
 export async function startAssistant(options: StartOptions = {}): Promise<void> {
   ensureSidebarHost();
+  const runId = ++activeRunId;
   disposeActiveObserver();
 
   const fetchPlayers = options.fetchPlayers ?? loadPlayers;
   try {
     const index = await fetchPlayers();
-    await renderWithState(ensureSidebarHost(), index, options);
+    if (isStale(runId)) {
+      return;
+    }
+
+    await renderWithState(ensureSidebarHost(), index, options, runId);
+    if (isStale(runId)) {
+      return;
+    }
 
     if (options.observeMutations !== false && typeof MutationObserver !== "undefined") {
       const rerender = debounce(() => {
-        void renderWithState(ensureSidebarHost(), index, options);
+        if (!isStale(runId)) {
+          void renderWithState(ensureSidebarHost(), index, options, runId);
+        }
       }, 150);
-      activeObserver = new MutationObserver(rerender);
+      activeDebouncedCallback = rerender;
+      activeObserver = new MutationObserver(rerender.trigger);
       activeObserver.observe(document.body, {
         childList: true,
         subtree: true,
@@ -33,8 +51,11 @@ export async function startAssistant(options: StartOptions = {}): Promise<void> 
       });
     }
   } catch (error) {
+    if (isStale(runId)) {
+      return;
+    }
     console.error("[82 Assist] Failed to load players", error);
-    await renderWithState(ensureSidebarHost(), emptyPlayerIndex(), options, "players data unavailable");
+    await renderWithState(ensureSidebarHost(), emptyPlayerIndex(), options, runId, "players data unavailable");
   }
 }
 
@@ -42,10 +63,14 @@ async function renderWithState(
   root: ShadowRoot,
   index: PlayerIndex,
   options: StartOptions,
+  runId: number,
   error: string | null = null
 ): Promise<void> {
   const detected = detectGameState(document, index);
   const manual = await loadManualState();
+  if (isStale(runId)) {
+    return;
+  }
   const state = mergeManualState(detected, manual);
   const effectiveState: GameState = error ? { ...state, confidence: "low" } : state;
   const currentCandidates =
@@ -67,12 +92,15 @@ async function renderWithState(
     gaps: error ? [] : evaluation.gaps,
     skipAdvice,
     error,
-    onEdit: () => window.alert("Manual edit controls will open in this sidebar."),
+    onEdit: () => undefined,
     onRetry: () => {
       void startAssistant(options);
     },
-    onResetManualState: () => {
-      void clearManualState();
+    onResetManualState: async () => {
+      await clearManualState();
+      if (!isStale(runId)) {
+        await renderWithState(root, index, options, runId, error);
+      }
     }
   });
 }
@@ -112,21 +140,35 @@ function emptyPlayerIndex(): PlayerIndex {
 function disposeActiveObserver(): void {
   activeObserver?.disconnect();
   activeObserver = null;
+  activeDebouncedCallback?.cancel();
+  activeDebouncedCallback = null;
 }
 
-function debounce(callback: () => void, delayMs: number): () => void {
+function debounce(callback: () => void, delayMs: number): DebouncedCallback {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-  return () => {
-    if (timeoutId !== null) {
-      clearTimeout(timeoutId);
-    }
+  return {
+    trigger: () => {
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
 
-    timeoutId = setTimeout(() => {
-      timeoutId = null;
-      callback();
-    }, delayMs);
+      timeoutId = setTimeout(() => {
+        timeoutId = null;
+        callback();
+      }, delayMs);
+    },
+    cancel: () => {
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    }
   };
+}
+
+function isStale(runId: number): boolean {
+  return runId !== activeRunId;
 }
 
 if (typeof document !== "undefined" && (import.meta as ImportMeta & { env?: { MODE?: string } }).env?.MODE !== "test") {
