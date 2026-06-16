@@ -33,6 +33,36 @@ const bird: Player = {
   bpg: 0.8
 };
 
+const weakWing: Player = {
+  id: "weak-wing",
+  baseSlug: "weak-wing",
+  name: "Weak Wing",
+  team: "MIN",
+  decade: "1990s",
+  primaryPosition: "SF",
+  positions: ["SF"],
+  ppg: 2,
+  rpg: 1,
+  apg: 1,
+  spg: 0,
+  bpg: 0
+};
+
+const eliteWing: Player = {
+  id: "elite-wing",
+  baseSlug: "elite-wing",
+  name: "Elite Wing",
+  team: "LAL",
+  decade: "1990s",
+  primaryPosition: "SF",
+  positions: ["SF"],
+  ppg: 35,
+  rpg: 10,
+  apg: 8,
+  spg: 2,
+  bpg: 1
+};
+
 beforeEach(() => {
   document.body.innerHTML = "";
   vi.restoreAllMocks();
@@ -270,6 +300,32 @@ describe("content entrypoint", () => {
     expect(fetchPlayers).toHaveBeenCalledTimes(1);
     expect(host?.shadowRoot?.textContent).toContain("LAL 2000s");
     expect(host?.shadowRoot?.textContent).toContain("Kobe Bryant");
+  });
+
+  it("renders skip-team advice when team reroll distribution is materially stronger", async () => {
+    document.body.innerHTML = `
+      <main>
+        <p>Classic</p>
+        <p>Round 1/5</p>
+        <h2>MIN 1990s</h2>
+        <button>Weak Wing 2.0 PPG 1.0 RPG 1.0 APG</button>
+      </main>
+    `;
+
+    await startAssistant({
+      fetchPlayers: async () => ({
+        players: [weakWing, eliteWing],
+        byRoll: new Map([
+          ["MIN::1990s", [weakWing]],
+          ["LAL::1990s", [eliteWing]]
+        ]),
+        byName: new Map()
+      }),
+      observeMutations: false
+    });
+
+    const host = document.getElementById("assistant-82-0-host");
+    expect(host?.shadowRoot?.textContent).toContain("skip team");
   });
 
   it("saves partial manual corrections without clearing detected state", async () => {

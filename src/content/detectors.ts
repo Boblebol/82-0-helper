@@ -25,10 +25,11 @@ const DECADE_PATTERNS: Array<[Decade, RegExp]> = [
 export function detectGameState(doc: Document, index: PlayerIndex): DetectedGameState {
   const text = extractVisibleText(doc.body);
   const visibleRoll = detectVisibleRoll(doc);
+  const waitingForSpin = !visibleRoll && isWaitingForSpin(text);
   const mode = detectMode(text);
   const round = detectRound(text);
-  const team = visibleRoll?.team ?? detectTeam(text);
-  const decade = visibleRoll?.decade ?? detectDecade(text);
+  const team = waitingForSpin ? null : visibleRoll?.team ?? detectTeam(text);
+  const decade = waitingForSpin ? null : visibleRoll?.decade ?? detectDecade(text);
   const visiblePlayers = detectVisiblePlayers(doc, index, team, decade);
   const roster = detectRoster(doc, index);
   const confidence = team && decade ? "high" : "low";
@@ -59,6 +60,16 @@ function detectDecade(text: string): Decade | null {
   }
 
   return ACTIVE_DECADES.find((decade) => text.includes(decade)) ?? null;
+}
+
+function isWaitingForSpin(text: string): boolean {
+  return (
+    /\bSPIN\b/i.test(text) &&
+    /\bTEAM\b/i.test(text) &&
+    /\bERA\b/i.test(text) &&
+    !hasStatSignal(text) &&
+    !/\bplayers?\s+available\b/i.test(text)
+  );
 }
 
 function detectVisibleRoll(doc: Document): { team: string; decade: Decade } | null {

@@ -248,6 +248,41 @@ describe("DOM detectors", () => {
     expect(state.confidence).toBe("high");
   });
 
+  it("does not treat the slot machine preview as an active roll before players load", () => {
+    document.body.innerHTML = `
+      <main>
+        <span>Round 2/5</span>
+        <section>
+          <div>
+            <p>TEAM</p>
+            <p>ATL</p>
+            <p>Team</p>
+          </div>
+          <div>
+            <p>ERA</p>
+            <p>60's</p>
+            <p>Decade</p>
+          </div>
+          <button>SPIN</button>
+        </section>
+        <div data-lineup-tray>
+          <div role="button" aria-label="SG: Pete Maravich, tap to select for swap">
+            <div>PM</div><span>SG</span>
+          </div>
+        </div>
+      </main>
+    `;
+
+    const state = detectGameState(document, index);
+
+    expect(state.round).toBe(2);
+    expect(state.team).toBeNull();
+    expect(state.decade).toBeNull();
+    expect(state.visiblePlayers).toEqual([]);
+    expect(state.roster.SG?.name).toBe("Pete Maravich");
+    expect(state.confidence).toBe("low");
+  });
+
   it("recovers placed players from the 82-0 lineup tray aria labels", () => {
     document.body.innerHTML = `
       <main>

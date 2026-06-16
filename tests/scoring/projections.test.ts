@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Player, Roster } from "../../src/domain/types";
 import {
   evaluateRoll,
+  estimateRerollDeltas,
   recommendSkip,
   rosterGaps
 } from "../../src/scoring/projections";
@@ -160,5 +161,20 @@ describe("projections", () => {
     });
 
     expect(advice.kind).toBe("skip-only-if-chasing-82-0");
+  });
+
+  it("estimates stronger same-decade team reroll distributions", () => {
+    const weakRoll = player("Weak Wing", "weak-wing", "MIN", "1990s", ["SF"], 2, 1, 1, 0, 0);
+    const strongRoll = player("Elite Wing", "elite-wing", "LAL", "1990s", ["SF"], 35, 10, 8, 2, 1);
+
+    const deltas = estimateRerollDeltas({
+      roster: {},
+      allPlayers: [weakRoll, strongRoll],
+      currentTeam: "MIN",
+      currentDecade: "1990s"
+    });
+
+    expect(deltas.teamRerollMedianDelta).toBeGreaterThan(1.5);
+    expect(deltas.decadeRerollMedianDelta).toBe(0);
   });
 });

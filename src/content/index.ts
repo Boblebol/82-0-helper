@@ -3,7 +3,7 @@ import type { Decade, GameState } from "../domain/types";
 import { detectGameState } from "./detectors";
 import { ensureSidebarHost, renderSidebar } from "./sidebar";
 import { clearManualState, loadManualState, mergeManualState, saveManualState } from "../storage/manual-state";
-import { evaluateRoll, recommendSkip, type CandidateRecommendation, type SkipAdvice } from "../scoring/projections";
+import { estimateRerollDeltas, evaluateRoll, recommendSkip, type CandidateRecommendation, type RerollDeltas, type SkipAdvice } from "../scoring/projections";
 
 export interface StartOptions {
   fetchPlayers?: () => Promise<PlayerIndex>;
@@ -83,9 +83,15 @@ async function renderWithState(
     currentCandidates,
     allPlayers: index.players
   });
+  const rerollDeltas = estimateRerollDeltas({
+    roster: effectiveState.roster,
+    allPlayers: index.players,
+    currentTeam: effectiveState.confidence === "high" ? effectiveState.team : null,
+    currentDecade: effectiveState.confidence === "high" ? effectiveState.decade : null
+  });
   const skipAdvice = error
     ? fallbackSkipAdvice(error)
-    : bestSkipAdvice(evaluation.recommendations[0]);
+    : bestSkipAdvice(evaluation.recommendations[0], rerollDeltas);
 
   renderSidebar(root, {
     state: effectiveState,
@@ -128,7 +134,7 @@ async function renderWithState(
   });
 }
 
-function bestSkipAdvice(recommendation: CandidateRecommendation | undefined): SkipAdvice {
+function bestSkipAdvice(recommendation: CandidateRecommendation | undefined, rerollDeltas: RerollDeltas): SkipAdvice {
   if (!recommendation) {
     return {
       kind: "keep",
@@ -137,10 +143,10 @@ function bestSkipAdvice(recommendation: CandidateRecommendation | undefined): Sk
   }
 
   return recommendSkip({
-    bestDeltaExpectedWins: recommendation.deltaExpectedWins,
+    bestDeltaExpectedWins: recommendation.withPickWins - recommendation.currentWins,
     bestDeltaCeilingWins: recommendation.deltaCeilingWins,
-    teamRerollMedianDelta: recommendation.deltaExpectedWins,
-    decadeRerollMedianDelta: recommendation.deltaExpectedWins,
+    teamRerollMedianDelta: rerollDeltas.teamRerollMedianDelta,
+    decadeRerollMedianDelta: rerollDeltas.decadeRerollMedianDelta,
     ceilingWins: recommendation.ceilingWins
   });
 }

@@ -1,4 +1,4 @@
-import type { Player, Position, Roster } from "../domain/types";
+import type { Decade, Player, Position, Roster } from "../domain/types";
 import { calculateTeamResult, canPlayerPlayPosition, openPositions, placePlayer, projectedWins, rosterPlayers, roundToTenth, type TeamResult } from "./formula";
 
 const CEILING_CANDIDATES_PER_POSITION = 5;
@@ -51,6 +51,18 @@ export interface CandidateRecommendation {
 export interface RollEvaluation {
   recommendations: CandidateRecommendation[];
   gaps: string[];
+}
+
+export interface RerollDeltaInput {
+  roster: Roster;
+  allPlayers: Player[];
+  currentTeam: string | null;
+  currentDecade: Decade | null;
+}
+
+export interface RerollDeltas {
+  teamRerollMedianDelta: number;
+  decadeRerollMedianDelta: number;
 }
 
 export interface SkipAdviceInput {
@@ -115,6 +127,37 @@ export function recommendSkip(input: SkipAdviceInput): SkipAdvice {
   }
 
   return { kind: "keep", reason: "The current roll is strong relative to reroll options." };
+}
+
+export function estimateRerollDeltas(input: RerollDeltaInput): RerollDeltas {
+  if (!input.currentTeam || !input.currentDecade) {
+    return { teamRerollMedianDelta: 0, decadeRerollMedianDelta: 0 };
+  }
+
+  const currentTeam = input.currentTeam.toUpperCase();
+  const currentWins = calculateTeamResult(input.roster).wins;
+  const playersByRoll = groupPlayersByRoll(input.allPlayers);
+  const totals = rosterStatTotals(input.roster);
+  const teamDeltas: number[] = [];
+  const decadeDeltas: number[] = [];
+
+  for (const [rollKey, candidates] of playersByRoll.entries()) {
+    const [team, decade] = rollKey.split("::") as [string, Decade];
+    const delta = bestImmediateDeltaForCandidates(input.roster, candidates, totals, currentWins);
+
+    if (decade === input.currentDecade && team !== currentTeam) {
+      teamDeltas.push(delta);
+    }
+
+    if (team === currentTeam && decade !== input.currentDecade) {
+      decadeDeltas.push(delta);
+    }
+  }
+
+  return {
+    teamRerollMedianDelta: median(teamDeltas),
+    decadeRerollMedianDelta: median(decadeDeltas)
+  };
 }
 
 function bestPlacementForPlayer(roster: Roster, player: Player, playerPools: PlayerPoolsByPosition, currentWins: number): CandidateRecommendation[] {
@@ -234,6 +277,56 @@ function groupPlayersByPosition(players: Player[]): PlayerPoolsByPosition {
     }
   }
   return pools;
+}
+
+function groupPlayersByRoll(players: Player[]): Map<string, Player[]> {
+  const playersByRoll = new Map<string, Player[]>();
+  for (const player of players) {
+    const key = `${player.team.toUpperCase()}::${player.decade}`;
+    const rollPlayers = playersByRoll.get(key);
+    if (rollPlayers) {
+      rollPlayers.push(player);
+    } else {
+      playersByRoll.set(key, [player]);
+    }
+  }
+  return playersByRoll;
+}
+
+function bestImmediateDeltaForCandidates(
+  roster: Roster,
+  candidates: Player[],
+  totals: RosterStatTotals,
+  currentWins: number
+): number {
+  const selectedBaseSlugs = new Set(rosterPlayers(roster).map((player) => player.baseSlug));
+  let bestDelta = Number.NEGATIVE_INFINITY;
+
+  for (const player of candidates) {
+    if (selectedBaseSlugs.has(player.baseSlug)) {
+      continue;
+    }
+
+    for (const position of openPositions(roster)) {
+      if (!canPlayerPlayPosition(player, position)) {
+        continue;
+      }
+
+      bestDelta = Math.max(bestDelta, resultWithPlayer(totals, player).wins - currentWins);
+    }
+  }
+
+  return Number.isFinite(bestDelta) ? bestDelta : 0;
+}
+
+function median(values: number[]): number {
+  if (values.length === 0) {
+    return 0;
+  }
+
+  const sorted = [...values].sort((left, right) => left - right);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
 }
 
 function topCeilingCandidates(roster: Roster, position: Position, legalPlayers: Player[], usedBaseSlugs: Set<string>): Player[] {
