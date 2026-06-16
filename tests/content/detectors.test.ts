@@ -8,6 +8,7 @@ const index = normalizePlayers([
   { team: "LAL", player: "Shaquille O'Neal", pos: "C", positions: ["C"], ppg: 29.7, rpg: 13.6, apg: 3.8, spg: 0.5, bpg: 3, id: "shaq", baseSlug: "shaq", era: "2000s" },
   { team: "LAL", player: "Magic Johnson", pos: "PG", positions: ["PG"], ppg: 23.9, rpg: 6.3, apg: 12.2, spg: 1.7, bpg: 0.4, id: "magic", baseSlug: "magic", era: "1980s" },
   { team: "SAS", player: "Tim Duncan", pos: "PF", positions: ["PF", "C"], ppg: 25.5, rpg: 12.7, apg: 3.7, spg: 0.7, bpg: 2.5, id: "duncan", baseSlug: "duncan", era: "2000s" },
+  { team: "DEN", player: "Carmelo Anthony", pos: "PF", positions: ["PF", "SF"], ppg: 26.9, rpg: 7.0, apg: 3.0, spg: 1.1, bpg: 0.5, id: "carmelo_den", baseSlug: "carmelo", era: "2010s" },
   { team: "LAL", player: "A.C. Green", pos: "PF", positions: ["PF"], ppg: 14.5, rpg: 9.0, apg: 1.1, spg: 1.0, bpg: 0.4, id: "ac_green", baseSlug: "ac_green", era: "1990s" },
   { team: "LAL", player: "C.J. Watson", pos: "PG", positions: ["PG"], ppg: 8.0, rpg: 2.1, apg: 3.2, spg: 1.0, bpg: 0.2, id: "cj_watson", baseSlug: "cj_watson", era: "2000s" }
 ]);
@@ -184,6 +185,30 @@ describe("DOM detectors", () => {
     const state = detectGameState(document, index);
 
     expect(state.decade).toBe("2000s");
+  });
+
+  it("detects team abbreviations rendered in lowercase player metadata", () => {
+    document.body.innerHTML = `
+      <main>
+        <p>Classic</p>
+        <p>Round 1/5</p>
+        <section aria-label="players">
+          <button>
+            <span>Carmelo Anthony</span>
+            <span>PF · SF</span>
+            <span>den · 2010s</span>
+            <span>26.9 PPG</span>
+          </button>
+        </section>
+      </main>
+    `;
+
+    const state = detectGameState(document, index);
+
+    expect(state.team).toBe("DEN");
+    expect(state.decade).toBe("2010s");
+    expect(state.visiblePlayers.map((player) => player.name)).toEqual(["Carmelo Anthony"]);
+    expect(state.confidence).toBe("high");
   });
 
   it("returns low confidence when the current roll is missing", () => {

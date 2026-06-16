@@ -9,7 +9,7 @@ import {
 } from "../domain/types";
 import { normalizeName, type PlayerIndex } from "../data/players";
 
-const TEAM_PATTERN = /\b(ATL|BOS|BKN|CHA|CHI|CLE|DAL|DEN|DET|GSW|HOU|IND|LAC|LAL|MEM|MIA|MIL|MIN|NOP|NYK|OKC|ORL|PHI|PHX|POR|SAC|SAS|TOR|UTA|WAS)\b/;
+const TEAM_PATTERN = /\b(ATL|BOS|BKN|CHA|CHI|CLE|DAL|DEN|DET|GSW|HOU|IND|LAC|LAL|MEM|MIA|MIL|MIN|NOP|NYK|OKC|ORL|PHI|PHX|POR|SAC|SAS|TOR|UTA|WAS)\b/i;
 const ROUND_PATTERN = /\bRound\s+([1-5])\b/i;
 const DECADE_PATTERNS: Array<[Decade, RegExp]> = [
   ["1960s", /\b(?:1960s|60s|60's)\b/i],
@@ -46,7 +46,7 @@ function detectRound(text: string): number | null {
 }
 
 function detectTeam(text: string): string | null {
-  return text.match(TEAM_PATTERN)?.[1] ?? null;
+  return text.match(TEAM_PATTERN)?.[1]?.toUpperCase() ?? null;
 }
 
 function detectDecade(text: string): Decade | null {
