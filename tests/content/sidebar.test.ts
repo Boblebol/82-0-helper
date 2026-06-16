@@ -56,7 +56,8 @@ describe("sidebar", () => {
       error: null,
       onEdit: vi.fn(),
       onRetry: vi.fn(),
-      onResetManualState: vi.fn()
+      onResetManualState: vi.fn(),
+      onManualSave: vi.fn()
     });
 
     expect(root.textContent).toContain("LAL 2000s");
@@ -81,7 +82,8 @@ describe("sidebar", () => {
       error: "players data unavailable",
       onEdit: vi.fn(),
       onRetry: vi.fn(),
-      onResetManualState: vi.fn()
+      onResetManualState: vi.fn(),
+      onManualSave: vi.fn()
     });
 
     expect(root.textContent).toContain("players data unavailable");
@@ -102,7 +104,8 @@ describe("sidebar", () => {
       error: "players data unavailable",
       onEdit,
       onRetry,
-      onResetManualState
+      onResetManualState,
+      onManualSave: vi.fn()
     });
 
     root.querySelector<HTMLButtonElement>("button[data-action='edit']")?.click();
@@ -127,7 +130,8 @@ describe("sidebar", () => {
       error: null,
       onEdit: vi.fn(),
       onRetry: vi.fn(),
-      onResetManualState: vi.fn()
+      onResetManualState: vi.fn(),
+      onManualSave: vi.fn()
     });
 
     const toggle = root.querySelector<HTMLButtonElement>("button[data-action='toggle']");
@@ -151,7 +155,8 @@ describe("sidebar", () => {
       error: null,
       onEdit: vi.fn(),
       onRetry: vi.fn(),
-      onResetManualState: vi.fn()
+      onResetManualState: vi.fn(),
+      onManualSave: vi.fn()
     });
 
     root.querySelector<HTMLButtonElement>("button[data-action='toggle']")?.click();
@@ -164,7 +169,8 @@ describe("sidebar", () => {
       error: null,
       onEdit: vi.fn(),
       onRetry: vi.fn(),
-      onResetManualState: vi.fn()
+      onResetManualState: vi.fn(),
+      onManualSave: vi.fn()
     });
 
     expect(root.querySelector(".assistant-shell")?.classList.contains("is-open")).toBe(true);
@@ -189,7 +195,8 @@ describe("sidebar", () => {
       error: '<img src=x onerror=alert(1)>',
       onEdit: vi.fn(),
       onRetry: vi.fn(),
-      onResetManualState: vi.fn()
+      onResetManualState: vi.fn(),
+      onManualSave: vi.fn()
     });
 
     expect(root.querySelector("img")).toBeNull();

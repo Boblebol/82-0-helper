@@ -2,7 +2,7 @@ import { getPlayersForRoll, loadPlayers, type PlayerIndex } from "../data/player
 import type { Decade, GameState } from "../domain/types";
 import { detectGameState } from "./detectors";
 import { ensureSidebarHost, renderSidebar } from "./sidebar";
-import { clearManualState, loadManualState, mergeManualState } from "../storage/manual-state";
+import { clearManualState, loadManualState, mergeManualState, saveManualState } from "../storage/manual-state";
 import { evaluateRoll, recommendSkip, type CandidateRecommendation, type SkipAdvice } from "../scoring/projections";
 
 export interface StartOptions {
@@ -98,6 +98,22 @@ async function renderWithState(
     },
     onResetManualState: async () => {
       await clearManualState();
+      if (!isStale(runId)) {
+        await renderWithState(root, index, options, runId, error);
+      }
+    },
+    onManualSave: async (manualPatch) => {
+      if (isStale(runId)) {
+        return;
+      }
+
+      await saveManualState({
+        ...state.manual,
+        team: manualPatch.team,
+        decade: manualPatch.decade as Decade | null,
+        round: manualPatch.round
+      });
+
       if (!isStale(runId)) {
         await renderWithState(root, index, options, runId, error);
       }
