@@ -77,6 +77,25 @@ describe("DOM detectors", () => {
     expect(state.visiblePlayers.map((player) => player.name)).toEqual(["Kobe Bryant"]);
   });
 
+  it("ignores draft status labels when real button candidates are present", () => {
+    document.body.innerHTML = `
+      <main>
+        <section aria-label="draft status">
+          <p>Classic</p>
+          <p>Round 3</p>
+          <h2>LAL 2000s</h2>
+        </section>
+        <section>
+          <button>Kobe Bryant 30.0 PPG 6.9 RPG 5.9 APG</button>
+        </section>
+      </main>
+    `;
+
+    const state = detectGameState(document, index);
+
+    expect(state.visiblePlayers.map((player) => player.name)).toEqual(["Kobe Bryant"]);
+  });
+
   it("parses roster slots with newlines, colons, and compact text", () => {
     document.body.innerHTML = `
       <main>

@@ -136,7 +136,7 @@ function extractTextWithSeparators(root: Element): string {
 
 function getVisibleCandidateElements(doc: Document, players: Player[], decade: Decade | null): Element[] {
   const labeledContainers = [...doc.querySelectorAll("[aria-label]")].filter((element) =>
-    /players|options|draft/i.test(element.getAttribute("aria-label") ?? "")
+    isRealOptionsLabel(element.getAttribute("aria-label") ?? "")
   );
   if (labeledContainers.length > 0) {
     return labeledContainers
@@ -186,4 +186,16 @@ function isCandidateText(element: Element, decade: Decade | null, requireStatSig
   }
 
   return !requireStatSignals && text.length > 0;
+}
+
+function isRealOptionsLabel(label: string): boolean {
+  const normalized = label.toLowerCase();
+  if (/status\b/.test(normalized)) {
+    return false;
+  }
+
+  return (
+    /\b(players?|options?|choices?|candidates?|picks?|cards?|pool|board)\b/.test(normalized) ||
+    /\bdraft\s+(players?|options?|choices?|candidates?|picks?|cards?|pool|board)\b/.test(normalized)
+  );
 }
