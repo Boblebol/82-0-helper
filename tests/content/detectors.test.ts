@@ -9,6 +9,9 @@ const index = normalizePlayers([
   { team: "LAL", player: "Magic Johnson", pos: "PG", positions: ["PG"], ppg: 23.9, rpg: 6.3, apg: 12.2, spg: 1.7, bpg: 0.4, id: "magic", baseSlug: "magic", era: "1980s" },
   { team: "SAS", player: "Tim Duncan", pos: "PF", positions: ["PF", "C"], ppg: 25.5, rpg: 12.7, apg: 3.7, spg: 0.7, bpg: 2.5, id: "duncan", baseSlug: "duncan", era: "2000s" },
   { team: "DEN", player: "Carmelo Anthony", pos: "PF", positions: ["PF", "SF"], ppg: 26.9, rpg: 7.0, apg: 3.0, spg: 1.1, bpg: 0.5, id: "carmelo_den", baseSlug: "carmelo", era: "2010s" },
+  { team: "BOS", player: "Larry Bird", pos: "SF", positions: ["SF", "PF"], ppg: 24, rpg: 10, apg: 6, spg: 1.7, bpg: 0.8, id: "bird", baseSlug: "bird", era: "1990s" },
+  { team: "UTA", player: "Pete Maravich", pos: "SG", positions: ["SG", "PG"], ppg: 25.7, rpg: 4.3, apg: 5.6, spg: 1.5, bpg: 0.3, id: "pete", baseSlug: "pete", era: "1970s" },
+  { team: "MIN", player: "Tony Campbell", pos: "SF", positions: ["SF", "SG"], ppg: 20.6, rpg: 4.6, apg: 2.8, spg: 1.4, bpg: 0.5, id: "campbell", baseSlug: "campbell", era: "1990s" },
   { team: "LAL", player: "A.C. Green", pos: "PF", positions: ["PF"], ppg: 14.5, rpg: 9.0, apg: 1.1, spg: 1.0, bpg: 0.4, id: "ac_green", baseSlug: "ac_green", era: "1990s" },
   { team: "LAL", player: "C.J. Watson", pos: "PG", positions: ["PG"], ppg: 8.0, rpg: 2.1, apg: 3.2, spg: 1.0, bpg: 0.2, id: "cj_watson", baseSlug: "cj_watson", era: "2000s" }
 ]);
@@ -171,6 +174,109 @@ describe("DOM detectors", () => {
     expect(state.roster.PF?.name).toBe("Tim Duncan");
   });
 
+  it("does not parse live draft option positions as roster slots", () => {
+    document.body.innerHTML = `
+      <main>
+        <span>Round 2/5</span>
+        <div class="fixed top-12">
+          <div><span>MIN</span></div>
+          <div>90's</div>
+          <span>Team</span>
+          <span>Era</span>
+        </div>
+        <section>
+          <div>All G F C PPG</div>
+          <p>68 players available</p>
+          <div class="flex flex-row items-center justify-between px-3 py-2 rounded-lg border">
+            <div>
+              <p>Tony Campbell</p>
+              <p>SF · SG</p>
+              <p>MIN · 1990s</p>
+            </div>
+            <div>
+              <span>20.6</span><span>PPG</span>
+              <span>4.6</span><span>RPG</span>
+              <span>2.8</span><span>APG</span>
+            </div>
+          </div>
+        </section>
+        <section class="hidden md:flex">
+          <button><span>PM</span><span>SG</span></button>
+        </section>
+      </main>
+    `;
+
+    const state = detectGameState(document, index);
+
+    expect(state.round).toBe(2);
+    expect(state.team).toBe("MIN");
+    expect(state.decade).toBe("1990s");
+    expect(state.visiblePlayers.map((player) => player.name)).toEqual(["Tony Campbell"]);
+    expect(state.roster).toEqual({});
+  });
+
+  it("detects a lowercase roll from a live div player card", () => {
+    document.body.innerHTML = `
+      <main>
+        <span>Round 1/5</span>
+        <section>
+          <button>All</button>
+          <button>G</button>
+          <button>F</button>
+          <button>C</button>
+          <div class="flex flex-row items-center justify-between px-3 py-2 rounded-lg border">
+            <div>
+              <p>Carmelo Anthony</p>
+              <p>PF · SF</p>
+              <p>den · 2010s</p>
+            </div>
+            <div>
+              <span>26.9</span><span>PPG</span>
+              <span>7.0</span><span>RPG</span>
+              <span>3.0</span><span>APG</span>
+            </div>
+          </div>
+        </section>
+      </main>
+    `;
+
+    const state = detectGameState(document, index);
+
+    expect(state.team).toBe("DEN");
+    expect(state.decade).toBe("2010s");
+    expect(state.visiblePlayers.map((player) => player.name)).toEqual(["Carmelo Anthony"]);
+    expect(state.confidence).toBe("high");
+  });
+
+  it("recovers placed players from the 82-0 lineup tray aria labels", () => {
+    document.body.innerHTML = `
+      <main>
+        <span>Round 2/5</span>
+        <div data-lineup-tray>
+          <div role="button" aria-label="PG empty">
+            <div>PG</div><span>PG</span>
+          </div>
+          <div role="button" aria-label="SG: Pete Maravich, tap to select for swap">
+            <div>PM</div><span>SG</span>
+          </div>
+          <div role="button" aria-label="SF empty">
+            <div>SF</div><span>SF</span>
+          </div>
+          <div role="button" aria-label="PF empty">
+            <div>PF</div><span>PF</span>
+          </div>
+          <div role="button" aria-label="C empty">
+            <div>C</div><span>C</span>
+          </div>
+        </div>
+      </main>
+    `;
+
+    const state = detectGameState(document, index);
+
+    expect(state.roster.SG?.name).toBe("Pete Maravich");
+  });
+
   it("detects shorthand decade labels like 00's", () => {
     document.body.innerHTML = `
       <main>
@@ -209,6 +315,56 @@ describe("DOM detectors", () => {
     expect(state.decade).toBe("2010s");
     expect(state.visiblePlayers.map((player) => player.name)).toEqual(["Carmelo Anthony"]);
     expect(state.confidence).toBe("high");
+  });
+
+  it("prefers the visible player card roll over stale hidden team text", () => {
+    document.body.innerHTML = `
+      <main>
+        <section aria-label="players" hidden>
+          <button>
+            <span>Larry Bird</span>
+            <span>BOS · 1990s</span>
+            <span>24.0 PPG</span>
+          </button>
+        </section>
+        <section aria-label="players">
+          <button>
+            <span>Carmelo Anthony</span>
+            <span>PF · SF</span>
+            <span>den · 2010s</span>
+            <span>26.9 PPG</span>
+          </button>
+        </section>
+      </main>
+    `;
+
+    const state = detectGameState(document, index);
+
+    expect(state.team).toBe("DEN");
+    expect(state.decade).toBe("2010s");
+    expect(state.visiblePlayers.map((player) => player.name)).toEqual(["Carmelo Anthony"]);
+  });
+
+  it("does not treat stray lowercase min text as the Minnesota roll", () => {
+    document.body.innerHTML = `
+      <main>
+        <section aria-label="players">
+          <button>
+            <span>min</span>
+            <span>Carmelo Anthony</span>
+            <span>PF · SF</span>
+            <span>den · 2010s</span>
+            <span>26.9 PPG</span>
+          </button>
+        </section>
+      </main>
+    `;
+
+    const state = detectGameState(document, index);
+
+    expect(state.team).toBe("DEN");
+    expect(state.decade).toBe("2010s");
+    expect(state.visiblePlayers.map((player) => player.name)).toEqual(["Carmelo Anthony"]);
   });
 
   it("returns low confidence when the current roll is missing", () => {

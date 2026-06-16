@@ -9,7 +9,8 @@ import {
 } from "../domain/types";
 import { normalizeName, type PlayerIndex } from "../data/players";
 
-const TEAM_PATTERN = /\b(ATL|BOS|BKN|CHA|CHI|CLE|DAL|DEN|DET|GSW|HOU|IND|LAC|LAL|MEM|MIA|MIL|MIN|NOP|NYK|OKC|ORL|PHI|PHX|POR|SAC|SAS|TOR|UTA|WAS)\b/i;
+const TEAM_CODES = "ATL|BOS|BKN|CHA|CHI|CLE|DAL|DEN|DET|GSW|HOU|IND|LAC|LAL|MEM|MIA|MIL|MIN|NOP|NYK|OKC|ORL|PHI|PHX|POR|SAC|SAS|TOR|UTA|WAS";
+const TEAM_PATTERN = new RegExp(`\\b(${TEAM_CODES})\\b`);
 const ROUND_PATTERN = /\bRound\s+([1-5])\b/i;
 const DECADE_PATTERNS: Array<[Decade, RegExp]> = [
   ["1960s", /\b(?:1960s|60s|60's)\b/i],
@@ -22,11 +23,12 @@ const DECADE_PATTERNS: Array<[Decade, RegExp]> = [
 ];
 
 export function detectGameState(doc: Document, index: PlayerIndex): DetectedGameState {
-  const text = doc.body.textContent ?? "";
+  const text = extractVisibleText(doc.body);
+  const visibleRoll = detectVisibleRoll(doc);
   const mode = detectMode(text);
   const round = detectRound(text);
-  const team = detectTeam(text);
-  const decade = detectDecade(text);
+  const team = visibleRoll?.team ?? detectTeam(text);
+  const decade = visibleRoll?.decade ?? detectDecade(text);
   const visiblePlayers = detectVisiblePlayers(doc, index, team, decade);
   const roster = detectRoster(doc, index);
   const confidence = team && decade ? "high" : "low";
@@ -46,7 +48,7 @@ function detectRound(text: string): number | null {
 }
 
 function detectTeam(text: string): string | null {
-  return text.match(TEAM_PATTERN)?.[1]?.toUpperCase() ?? null;
+  return text.match(TEAM_PATTERN)?.[1] ?? null;
 }
 
 function detectDecade(text: string): Decade | null {
@@ -59,13 +61,65 @@ function detectDecade(text: string): Decade | null {
   return ACTIVE_DECADES.find((decade) => text.includes(decade)) ?? null;
 }
 
+function detectVisibleRoll(doc: Document): { team: string; decade: Decade } | null {
+  const counts = new Map<string, { team: string; decade: Decade; count: number }>();
+  const elements = getVisibleRollCandidateElements(doc);
+
+  for (const element of elements) {
+    const text = extractVisibleText(element);
+    const roll = detectRollPair(text);
+    if (!roll) {
+      continue;
+    }
+
+    const key = `${roll.team}::${roll.decade}`;
+    const current = counts.get(key);
+    counts.set(key, {
+      team: roll.team,
+      decade: roll.decade,
+      count: (current?.count ?? 0) + 1
+    });
+  }
+
+  return [...counts.values()].sort((left, right) => right.count - left.count)[0] ?? null;
+}
+
+function detectRollPair(text: string): { team: string; decade: Decade } | null {
+  for (const decade of ACTIVE_DECADES) {
+    const teamBeforeDecade = new RegExp(`\\b(${TEAM_CODES})\\b\\s*(?:[·•|/,-]|\\s)\\s*${escapeRegExp(decade)}\\b`, "i");
+    const beforeMatch = text.match(teamBeforeDecade);
+    if (beforeMatch) {
+      return { team: beforeMatch[1].toUpperCase(), decade };
+    }
+
+    const decadeBeforeTeam = new RegExp(`\\b${escapeRegExp(decade)}\\b\\s*(?:[·•|/,-]|\\s)\\s*(${TEAM_CODES})\\b`, "i");
+    const afterMatch = text.match(decadeBeforeTeam);
+    if (afterMatch) {
+      return { team: afterMatch[1].toUpperCase(), decade };
+    }
+  }
+
+  return null;
+}
+
+function getVisibleRollCandidateElements(doc: Document): Element[] {
+  const candidates = [...doc.querySelectorAll("button, [role='button'], article, li, section, div")]
+    .filter((element) => isVisibleElement(element) && !isInExcludedArea(element))
+    .filter((element) => {
+      const text = extractVisibleText(element);
+      return hasStatSignal(text) && detectRollPair(text);
+    });
+
+  return candidates.filter((element) => !candidates.some((other) => other !== element && element.contains(other)));
+}
+
 function detectVisiblePlayers(doc: Document, index: PlayerIndex, team: string | null, decade: Decade | null): Player[] {
   const scopedPlayers = team && decade ? index.byRoll.get(`${team}::${decade}`) ?? [] : index.players;
   const elements = getVisibleCandidateElements(doc, decade);
   const visiblePlayers: Player[] = [];
 
   for (const element of elements) {
-    const elementText = (element.textContent ?? "").toLowerCase();
+    const elementText = extractVisibleText(element).toLowerCase();
     for (const player of scopedPlayers) {
       if (elementText.includes(normalizeName(player.name))) {
         if (!visiblePlayers.includes(player)) {
@@ -79,9 +133,13 @@ function detectVisiblePlayers(doc: Document, index: PlayerIndex, team: string | 
 }
 
 function detectRoster(doc: Document, index: PlayerIndex): Roster {
+  const roster = detectLineupTrayRoster(doc, index);
   const rosterRoot = doc.querySelector('[aria-label="roster"]');
-  const text = rosterRoot ? extractTextWithSeparators(rosterRoot) : doc.body.textContent ?? "";
-  const roster: Roster = {};
+  if (!rosterRoot) {
+    return roster;
+  }
+
+  const text = extractTextWithSeparators(rosterRoot);
   for (const position of POSITIONS) {
     const player = findRosterPlayerForPosition(text, position, index.players);
     if (player) {
@@ -89,6 +147,32 @@ function detectRoster(doc: Document, index: PlayerIndex): Roster {
     }
   }
   return roster;
+}
+
+function detectLineupTrayRoster(doc: Document, index: PlayerIndex): Roster {
+  const roster: Roster = {};
+  const labels = [...doc.querySelectorAll("[data-lineup-tray] [aria-label]")]
+    .map((element) => element.getAttribute("aria-label") ?? "")
+    .filter(Boolean);
+
+  for (const label of labels) {
+    const match = label.match(/^\s*(PG|SG|SF|PF|C)\s*:\s*([^,]+?)\s*(?:,|$)/);
+    if (!match) {
+      continue;
+    }
+
+    const position = match[1] as Position;
+    const player = findPlayerByName(match[2], index);
+    if (player) {
+      roster[position] = player;
+    }
+  }
+
+  return roster;
+}
+
+function findPlayerByName(name: string, index: PlayerIndex): Player | undefined {
+  return index.byName.get(normalizeName(name)) ?? index.players.find((player) => normalizeName(player.name) === normalizeName(name));
 }
 
 function findRosterPlayerForPosition(text: string, position: Position, players: Player[]): Player | undefined {
@@ -136,22 +220,26 @@ function extractTextWithSeparators(root: Element): string {
 
 function getVisibleCandidateElements(doc: Document, decade: Decade | null): Element[] {
   const labeledContainers = [...doc.querySelectorAll("[aria-label]")].filter((element) =>
-    isRealOptionsLabel(element.getAttribute("aria-label") ?? "")
+    isVisibleElement(element) && isRealOptionsLabel(element.getAttribute("aria-label") ?? "")
   );
   if (labeledContainers.length > 0) {
     return labeledContainers
       .flatMap((container) => getLeafCandidates(container))
+      .filter((element) => isVisibleElement(element))
       .filter((element) => isCandidateText(element, decade, false));
   }
 
   const interactiveCandidates = [...doc.querySelectorAll("button, [role='button']")].filter(
-    (element) => !isInExcludedArea(element)
+    (element) => isVisibleElement(element) && !isInExcludedArea(element)
   );
-  if (interactiveCandidates.length > 0) {
-    return interactiveCandidates;
+  const optionButtons = interactiveCandidates.filter((element) => isCandidateText(element, decade, true));
+  if (optionButtons.length > 0) {
+    return optionButtons;
   }
 
-  const fallbackCandidates = [...doc.querySelectorAll("article, li, section, div")].filter((element) => !isInExcludedArea(element));
+  const fallbackCandidates = [...doc.querySelectorAll("article, li, section, div")].filter(
+    (element) => isVisibleElement(element) && !isInExcludedArea(element)
+  );
 
   return fallbackCandidates
     .filter((element) => !fallbackCandidates.some((other) => other !== element && element.contains(other)))
@@ -176,8 +264,8 @@ function isInExcludedArea(element: Element): boolean {
 }
 
 function isCandidateText(element: Element, decade: Decade | null, requireStatSignals: boolean): boolean {
-  const text = (element.textContent ?? "").toLowerCase();
-  if (text.includes("ppg") || text.includes("rpg") || text.includes("apg")) {
+  const text = extractVisibleText(element).toLowerCase();
+  if (hasStatSignal(text)) {
     return true;
   }
 
@@ -186,6 +274,59 @@ function isCandidateText(element: Element, decade: Decade | null, requireStatSig
   }
 
   return !requireStatSignals && text.length > 0;
+}
+
+function hasStatSignal(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return normalized.includes("ppg") || normalized.includes("rpg") || normalized.includes("apg");
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function extractVisibleText(root: Element): string {
+  if (!isVisibleElement(root)) {
+    return "";
+  }
+
+  return [...root.childNodes]
+    .map((node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return node.textContent ?? "";
+      }
+
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        return extractVisibleText(node as Element);
+      }
+
+      return "";
+    })
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isVisibleElement(element: Element): boolean {
+  for (let current: Element | null = element; current; current = current.parentElement) {
+    if ((current as HTMLElement).hidden || current.getAttribute("aria-hidden") === "true") {
+      return false;
+    }
+
+    const inlineStyle = (current.getAttribute("style") ?? "").toLowerCase();
+    if (/\bdisplay\s*:\s*none\b/.test(inlineStyle) || /\bvisibility\s*:\s*hidden\b/.test(inlineStyle)) {
+      return false;
+    }
+
+    if (typeof getComputedStyle !== "undefined") {
+      const style = getComputedStyle(current);
+      if (style.display === "none" || style.visibility === "hidden") {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 function isRealOptionsLabel(label: string): boolean {
