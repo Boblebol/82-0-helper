@@ -60,4 +60,22 @@ describe("manual state", () => {
       confidence: "high"
     });
   });
+
+  it("lets explicit null manual values clear detected values", () => {
+    const detected: DetectedGameState = {
+      mode: "classic",
+      round: 2,
+      team: "LAL",
+      decade: "2000s",
+      visiblePlayers: [],
+      roster: {},
+      confidence: "high"
+    };
+
+    expect(mergeManualState(detected, { team: null, decade: null, round: null })).toMatchObject({
+      team: null,
+      decade: null,
+      round: null
+    });
+  });
 });

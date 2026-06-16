@@ -28,9 +28,9 @@ export function mergeManualState(detected: DetectedGameState, manual: ManualStat
   return {
     ...detected,
     mode: manual.mode ?? detected.mode,
-    round: manual.round ?? detected.round,
-    team: manual.team ?? detected.team,
-    decade: manual.decade ?? detected.decade,
+    round: manual.round !== undefined ? manual.round : detected.round,
+    team: manual.team !== undefined ? manual.team : detected.team,
+    decade: manual.decade !== undefined ? manual.decade : detected.decade,
     roster: { ...detected.roster, ...(manual.roster ?? {}) },
     manual
   };
