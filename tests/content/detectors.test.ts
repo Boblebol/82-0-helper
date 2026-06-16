@@ -7,7 +7,9 @@ const index = normalizePlayers([
   { team: "LAL", player: "Kobe Bryant", pos: "SG", positions: ["SG", "SF"], ppg: 30, rpg: 6.9, apg: 5.9, spg: 2.2, bpg: 0.8, id: "kobe", baseSlug: "kobe", era: "2000s" },
   { team: "LAL", player: "Shaquille O'Neal", pos: "C", positions: ["C"], ppg: 29.7, rpg: 13.6, apg: 3.8, spg: 0.5, bpg: 3, id: "shaq", baseSlug: "shaq", era: "2000s" },
   { team: "LAL", player: "Magic Johnson", pos: "PG", positions: ["PG"], ppg: 23.9, rpg: 6.3, apg: 12.2, spg: 1.7, bpg: 0.4, id: "magic", baseSlug: "magic", era: "1980s" },
-  { team: "SAS", player: "Tim Duncan", pos: "PF", positions: ["PF", "C"], ppg: 25.5, rpg: 12.7, apg: 3.7, spg: 0.7, bpg: 2.5, id: "duncan", baseSlug: "duncan", era: "2000s" }
+  { team: "SAS", player: "Tim Duncan", pos: "PF", positions: ["PF", "C"], ppg: 25.5, rpg: 12.7, apg: 3.7, spg: 0.7, bpg: 2.5, id: "duncan", baseSlug: "duncan", era: "2000s" },
+  { team: "LAL", player: "A.C. Green", pos: "PF", positions: ["PF"], ppg: 14.5, rpg: 9.0, apg: 1.1, spg: 1.0, bpg: 0.4, id: "ac_green", baseSlug: "ac_green", era: "1990s" },
+  { team: "LAL", player: "C.J. Watson", pos: "PG", positions: ["PG"], ppg: 8.0, rpg: 2.1, apg: 3.2, spg: 1.0, bpg: 0.2, id: "cj_watson", baseSlug: "cj_watson", era: "2000s" }
 ]);
 
 describe("DOM detectors", () => {
@@ -52,6 +54,29 @@ describe("DOM detectors", () => {
     expect(state.visiblePlayers.map((player) => player.name)).toEqual(["Kobe Bryant"]);
   });
 
+  it("prefers buttons over unlabeled roster-like containers for visible options", () => {
+    document.body.innerHTML = `
+      <main>
+        <section aria-label="draft status">
+          <p>Classic</p>
+          <p>Round 3</p>
+          <h2>LAL 2000s</h2>
+        </section>
+        <section>
+          <div>PG Magic Johnson</div>
+          <div>SG Shaquille O'Neal</div>
+        </section>
+        <section aria-label="players">
+          <button>Kobe Bryant 30.0 PPG 6.9 RPG 5.9 APG</button>
+        </section>
+      </main>
+    `;
+
+    const state = detectGameState(document, index);
+
+    expect(state.visiblePlayers.map((player) => player.name)).toEqual(["Kobe Bryant"]);
+  });
+
   it("parses roster slots with newlines, colons, and compact text", () => {
     document.body.innerHTML = `
       <main>
@@ -76,6 +101,27 @@ describe("DOM detectors", () => {
     expect(state.roster.PG?.name).toBe("Magic Johnson");
     expect(state.roster.SG?.name).toBe("Shaquille O'Neal");
     expect(state.roster.PF?.name).toBe("Tim Duncan");
+  });
+
+  it("parses dotted initials in roster player names", () => {
+    document.body.innerHTML = `
+      <main>
+        <section aria-label="draft status">
+          <p>Classic</p>
+          <p>Round 3</p>
+          <h2>LAL 1990s</h2>
+        </section>
+        <section aria-label="roster">
+          <div>PF A.C. Green C Empty</div>
+          <div>PG C.J. Watson SG Empty</div>
+        </section>
+      </main>
+    `;
+
+    const state = detectGameState(document, index);
+
+    expect(state.roster.PF?.name).toBe("A.C. Green");
+    expect(state.roster.PG?.name).toBe("C.J. Watson");
   });
 
   it("parses roster slots when sibling text nodes collapse without separators", () => {

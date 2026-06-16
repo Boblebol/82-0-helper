@@ -60,8 +60,8 @@ function detectDecade(text: string): Decade | null {
 }
 
 function detectVisiblePlayers(doc: Document, index: PlayerIndex, team: string | null, decade: Decade | null): Player[] {
-  const elements = getVisibleCandidateElements(doc);
   const scopedPlayers = team && decade ? index.byRoll.get(`${team}::${decade}`) ?? [] : index.players;
+  const elements = getVisibleCandidateElements(doc, scopedPlayers, decade);
   const visiblePlayers: Player[] = [];
 
   for (const element of elements) {
@@ -92,13 +92,15 @@ function detectRoster(doc: Document, index: PlayerIndex): Roster {
 }
 
 function findRosterPlayerForPosition(text: string, position: Position, players: Player[]): Player | undefined {
-  const matches = [...text.matchAll(/\b(PG|SG|SF|PF|C)\b/g)];
-  const positionMatchIndex = matches.findIndex((match) => match[1] === position);
+  const matches = [...text.matchAll(/(^|\s)(PG|SG|SF|PF|C)(?=\s|:|-|$)/g)];
+  const positionMatchIndex = matches.findIndex((match) => match[2] === position);
   if (positionMatchIndex < 0) {
     return undefined;
   }
 
-  const start = (matches[positionMatchIndex].index ?? 0) + position.length;
+  const match = matches[positionMatchIndex];
+  const prefixLength = match[1].length;
+  const start = (match.index ?? 0) + prefixLength + position.length;
   const end = matches[positionMatchIndex + 1]?.index ?? text.length;
   const segment = text
     .slice(start, end)
@@ -132,11 +134,33 @@ function extractTextWithSeparators(root: Element): string {
     : "";
 }
 
-function getVisibleCandidateElements(doc: Document): Element[] {
-  const candidates = [...doc.querySelectorAll("button, [role='button'], li, article, section, div")].filter(
+function getVisibleCandidateElements(doc: Document, players: Player[], decade: Decade | null): Element[] {
+  const labeledContainers = [...doc.querySelectorAll("[aria-label]")].filter((element) =>
+    /players|options|draft/i.test(element.getAttribute("aria-label") ?? "")
+  );
+  if (labeledContainers.length > 0) {
+    return labeledContainers
+      .flatMap((container) => getLeafCandidates(container))
+      .filter((element) => isCandidateText(element, decade, false));
+  }
+
+  const interactiveCandidates = [...doc.querySelectorAll("button, [role='button']")].filter(
     (element) => !isInExcludedArea(element)
   );
+  if (interactiveCandidates.length > 0) {
+    return interactiveCandidates;
+  }
 
+  const fallbackCandidates = [...doc.querySelectorAll("article, li, section, div")].filter((element) => !isInExcludedArea(element));
+
+  return fallbackCandidates
+    .filter((element) => !fallbackCandidates.some((other) => other !== element && element.contains(other)))
+    .filter((element) => isCandidateText(element, decade, true));
+}
+
+function getLeafCandidates(root: Element): Element[] {
+  const descendants = [...root.querySelectorAll("button, [role='button'], li, article, section, div")];
+  const candidates = descendants.length > 0 ? descendants : [root];
   return candidates.filter((element) => !candidates.some((other) => other !== element && element.contains(other)));
 }
 
@@ -149,4 +173,17 @@ function isInExcludedArea(element: Element): boolean {
   }
 
   return false;
+}
+
+function isCandidateText(element: Element, decade: Decade | null, requireStatSignals: boolean): boolean {
+  const text = (element.textContent ?? "").toLowerCase();
+  if (text.includes("ppg") || text.includes("rpg") || text.includes("apg")) {
+    return true;
+  }
+
+  if (decade && text.includes(decade.toLowerCase())) {
+    return true;
+  }
+
+  return !requireStatSignals && text.length > 0;
 }
