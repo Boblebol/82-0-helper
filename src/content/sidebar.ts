@@ -111,7 +111,8 @@ function wireEvents(root: Element | ShadowRoot, viewModel: SidebarViewModel): vo
 
   editButton?.addEventListener("click", () => {
     viewModel.onEdit();
-    setEditingState(shell, toggleButton, editPanel, true);
+    const isEditing = shell?.classList.contains("is-editing") ?? false;
+    setEditingState(shell, toggleButton, editPanel, !isEditing);
   });
   retryButton?.addEventListener("click", () => viewModel.onRetry());
   resetButton?.addEventListener("click", () => viewModel.onResetManualState());

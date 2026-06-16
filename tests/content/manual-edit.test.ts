@@ -14,7 +14,7 @@ const state: GameState = {
 };
 
 describe("manual edit UI", () => {
-  it("opens manual controls when edit is clicked", () => {
+  it("toggles manual controls when edit is clicked", () => {
     const root = document.createElement("div");
     const onEdit = vi.fn();
 
@@ -30,11 +30,21 @@ describe("manual edit UI", () => {
       onManualSave: vi.fn()
     });
 
-    root.querySelector<HTMLButtonElement>("[data-action='edit']")?.click();
+    const editButton = root.querySelector<HTMLButtonElement>("[data-action='edit']");
+    const shell = root.querySelector<HTMLElement>(".assistant-shell");
+    const panel = root.querySelector<HTMLElement>("[data-assistant-edit-panel]");
+
+    editButton?.click();
 
     expect(onEdit).toHaveBeenCalledOnce();
-    expect(root.querySelector(".assistant-shell")?.classList.contains("is-editing")).toBe(true);
+    expect(shell?.classList.contains("is-editing")).toBe(true);
+    expect(panel?.hidden).toBe(false);
     expect(root.querySelector<HTMLInputElement>("input[name='team']")).not.toBeNull();
+
+    editButton?.click();
+
+    expect(shell?.classList.contains("is-editing")).toBe(false);
+    expect(panel?.hidden).toBe(true);
   });
 
   it("saves normalized manual corrections", () => {
