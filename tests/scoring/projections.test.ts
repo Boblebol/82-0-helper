@@ -99,6 +99,17 @@ describe("projections", () => {
     expect(result.recommendations[0].ceilingRoster.C?.id).toBe("cap-duplicate-00");
   });
 
+  it("preserves ceiling assignments when later position candidates are already used", () => {
+    const loneFlexible = player("Lone Flexible", "lone-flex", "NYK", "1990s", ["PG", "C"], 26, 9, 7, 1, 1);
+    const result = evaluateRoll({
+      roster: {},
+      currentCandidates: [starterWing],
+      allPlayers: [starterWing, loneFlexible]
+    });
+
+    expect([result.recommendations[0].ceilingRoster.PG?.id, result.recommendations[0].ceilingRoster.C?.id]).toContain("lone-flex");
+  });
+
   it("identifies roster gaps by weakest category share", () => {
     expect(rosterGaps({ C: shaq })).toEqual(["STL", "AST", "PPG"]);
   });

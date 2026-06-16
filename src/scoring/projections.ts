@@ -200,14 +200,20 @@ function completeCeilingRoster(roster: Roster, playerPools: PlayerPoolsByPositio
       return;
     }
 
+    let placedCandidate = false;
     for (const player of candidates) {
       if (usedBaseSlugs.has(player.baseSlug)) {
         continue;
       }
 
+      placedCandidate = true;
       usedBaseSlugs.add(player.baseSlug);
       search(index + 1, placePlayer(currentRoster, position, player), usedBaseSlugs);
       usedBaseSlugs.delete(player.baseSlug);
+    }
+
+    if (!placedCandidate) {
+      search(index + 1, currentRoster, usedBaseSlugs);
     }
   }
 
