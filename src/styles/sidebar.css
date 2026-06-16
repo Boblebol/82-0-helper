@@ -9,7 +9,7 @@
 
 :host {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #edf2f7;
+  color: #e7eaee;
 }
 
 .assistant-shell {
@@ -24,9 +24,9 @@
   max-height: calc(100vh - 96px);
   overflow: auto;
   padding: 12px;
-  border: 1px solid #2b3440;
+  border: 1px solid #343a3f;
   border-radius: 8px;
-  background: linear-gradient(180deg, #131920 0%, #0f141a 100%);
+  background: linear-gradient(180deg, #1a1f23 0%, #14181c 100%);
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.42);
 }
 
@@ -35,10 +35,10 @@
   width: 100%;
   margin: 0 0 8px;
   padding: 10px 12px;
-  border: 1px solid #34404d;
+  border: 1px solid #454b50;
   border-radius: 8px;
-  background: #171d24;
-  color: #eef4fb;
+  background: #1b2024;
+  color: #eef1f4;
   font: inherit;
   font-weight: 700;
   text-align: left;
@@ -57,7 +57,7 @@
   margin: 2px 0 0;
   font-size: 16px;
   line-height: 1.2;
-  color: #f8fbff;
+  color: #f4f7f9;
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -68,16 +68,16 @@
   line-height: 1.2;
   letter-spacing: 0;
   text-transform: uppercase;
-  color: #91a4b8;
+  color: #a5adb4;
 }
 
 .assistant-round {
   flex: 0 0 auto;
   padding: 6px 8px;
   border-radius: 999px;
-  background: #1a2028;
-  border: 1px solid #3b4756;
-  color: #d6e0eb;
+  background: #22282d;
+  border: 1px solid #495158;
+  color: #e0e5ea;
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
@@ -85,33 +85,33 @@
 
 .assistant-card {
   padding: 10px;
-  border: 1px solid #2a313b;
+  border: 1px solid #32383d;
   border-radius: 8px;
-  background: #151a21;
+  background: #171b1f;
   margin-bottom: 10px;
 }
 
 .assistant-card--highlight {
-  border-color: #3d5467;
-  background: #161d25;
+  border-color: #1f7a58;
+  background: #14201b;
 }
 
 .assistant-card--error {
-  border-color: #7b3f49;
-  background: #22161a;
+  border-color: #8e4750;
+  background: #21161a;
 }
 
 .assistant-card-title {
   margin: 0 0 8px;
   font-size: 12px;
   font-weight: 700;
-  color: #a6bacb;
+  color: #c8cdd2;
   text-transform: uppercase;
 }
 
 .assistant-copy {
   margin: 0;
-  color: #d9e1ea;
+  color: #d8dde2;
   font-size: 13px;
   line-height: 1.45;
   min-width: 0;
@@ -133,7 +133,7 @@
 .assistant-player {
   font-size: 18px;
   font-weight: 700;
-  color: #f8fbff;
+  color: #f6f8fa;
   line-height: 1.2;
   min-width: 0;
   overflow-wrap: anywhere;
@@ -142,7 +142,7 @@
 .assistant-meta {
   margin-top: 4px;
   font-size: 12px;
-  color: #9eb0c3;
+  color: #adb4ba;
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -151,9 +151,9 @@
   flex: 0 0 auto;
   padding: 6px 10px;
   border-radius: 999px;
-  border: 1px solid #2d7a62;
-  background: #11261f;
-  color: #bdf2de;
+  border: 1px solid #1f7a58;
+  background: #102019;
+  color: #c7f2df;
   font-size: 13px;
   font-weight: 700;
 }
@@ -168,13 +168,13 @@
 .assistant-stats div {
   padding: 8px;
   border-radius: 8px;
-  background: #1a2028;
-  border: 1px solid #2c3440;
+  background: #202529;
+  border: 1px solid #353b40;
   min-width: 0;
   overflow-wrap: anywhere;
   font-size: 16px;
   font-weight: 700;
-  color: #eef4fb;
+  color: #f0f3f5;
 }
 
 .assistant-pill {
@@ -183,9 +183,9 @@
   margin-bottom: 8px;
   padding: 4px 8px;
   border-radius: 999px;
-  background: #17212a;
-  border: 1px solid #314052;
-  color: #d3e2f0;
+  background: #1f2428;
+  border: 1px solid #394046;
+  color: #d7dde2;
   font-size: 12px;
   font-weight: 700;
   text-transform: capitalize;
@@ -204,7 +204,7 @@
 .assistant-table th,
 .assistant-table td {
   padding: 8px 6px;
-  border-bottom: 1px solid #29313b;
+  border-bottom: 1px solid #343a3f;
   text-align: left;
   vertical-align: top;
   min-width: 0;
@@ -212,14 +212,14 @@
 }
 
 .assistant-table th {
-  color: #9eb0c3;
+  color: #c0c5ca;
   font-size: 11px;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .assistant-table td {
-  color: #edf2f7;
+  color: #eef1f4;
 }
 
 .assistant-table td:first-child {
@@ -240,7 +240,7 @@
   gap: 8px;
   align-items: center;
   padding: 7px 0;
-  border-bottom: 1px solid #29313b;
+  border-bottom: 1px solid #343a3f;
 }
 
 .assistant-roster li:last-child,
@@ -249,7 +249,7 @@
 }
 
 .assistant-roster-pos {
-  color: #9eb0c3;
+  color: #c0c5ca;
   font-size: 12px;
   font-weight: 700;
 }
@@ -268,9 +268,9 @@
 .assistant-gaps li {
   padding: 5px 8px;
   border-radius: 999px;
-  background: #17212a;
-  border: 1px solid #314052;
-  color: #d3e2f0;
+  background: #1f2428;
+  border: 1px solid #394046;
+  color: #d7dde2;
   font-size: 12px;
   font-weight: 700;
 }
@@ -285,19 +285,19 @@
   flex: 1 1 0;
   min-width: 0;
   padding: 10px 12px;
-  border: 1px solid #34404d;
+  border: 1px solid #454b50;
   border-radius: 8px;
-  background: #171d24;
-  color: #eef4fb;
+  background: #1b2024;
+  color: #eef1f4;
   font: inherit;
   font-weight: 700;
   cursor: pointer;
 }
 
 .assistant-button--ghost {
-  background: #131920;
-  border-color: #2a313b;
-  color: #c9d5e1;
+  background: #15191d;
+  border-color: #343a3f;
+  color: #d0d6db;
 }
 
 .assistant-button--compact {
