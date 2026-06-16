@@ -7,9 +7,15 @@ export interface PlayerIndex {
 }
 
 const PLAYERS_URL = "https://www.82-0.com/players_flat.json";
+const SITE_HOSTNAMES = new Set(["82-0.com", "www.82-0.com"]);
+
+interface LocationLike {
+  origin: string;
+  hostname: string;
+}
 
 export async function loadPlayers(fetchImpl: typeof fetch = fetch): Promise<PlayerIndex> {
-  const response = await fetchImpl(PLAYERS_URL);
+  const response = await fetchImpl(resolvePlayersUrl());
   if (!response.ok) {
     throw new Error(`Failed to fetch players: ${response.status}`);
   }
@@ -18,6 +24,14 @@ export async function loadPlayers(fetchImpl: typeof fetch = fetch): Promise<Play
     throw new Error("Invalid players payload");
   }
   return normalizePlayers(raw);
+}
+
+export function resolvePlayersUrl(locationLike: LocationLike | undefined = currentLocation()): string {
+  if (locationLike && SITE_HOSTNAMES.has(locationLike.hostname)) {
+    return `${locationLike.origin}/players_flat.json`;
+  }
+
+  return PLAYERS_URL;
 }
 
 export function normalizePlayers(rawPlayers: unknown[]): PlayerIndex {
@@ -110,6 +124,14 @@ function playerScore(player: Player): number {
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
+}
+
+function currentLocation(): LocationLike | undefined {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  return window.location;
 }
 
 function isRawPlayer(value: unknown): value is RawPlayer {

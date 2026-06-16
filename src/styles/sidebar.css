@@ -101,6 +101,11 @@
   background: #21161a;
 }
 
+.assistant-card--loading {
+  border-color: #4b667d;
+  background: #151d24;
+}
+
 .assistant-card-title {
   margin: 0 0 8px;
   font-size: 12px;

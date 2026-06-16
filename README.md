@@ -20,4 +20,6 @@ npm run build
 5. Select `dist/`.
 6. Open `https://www.82-0.com/`.
 
+After each rebuild, click the extension `Reload` button in `chrome://extensions` before refreshing `82-0.com`.
+
 The extension only injects advice. It never clicks, selects, submits, or changes gameplay.

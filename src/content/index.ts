@@ -20,9 +20,10 @@ let activeDebouncedCallback: DebouncedCallback | null = null;
 let activeRunId = 0;
 
 export async function startAssistant(options: StartOptions = {}): Promise<void> {
-  ensureSidebarHost();
+  const root = ensureSidebarHost();
   const runId = ++activeRunId;
   disposeActiveObserver();
+  renderLoadingState(root);
 
   const fetchPlayers = options.fetchPlayers ?? loadPlayers;
   try {
@@ -143,6 +144,27 @@ function fallbackSkipAdvice(error: string): SkipAdvice {
     kind: "keep",
     reason: error
   };
+}
+
+function renderLoadingState(root: ShadowRoot): void {
+  const detected = detectGameState(document, emptyPlayerIndex());
+  const state: GameState = { ...detected, manual: {} };
+
+  renderSidebar(root, {
+    state,
+    recommendations: [],
+    gaps: [],
+    skipAdvice: {
+      kind: "keep",
+      reason: "Waiting for player data before evaluating this roll."
+    },
+    loading: "Loading player data...",
+    error: null,
+    onEdit: () => undefined,
+    onRetry: () => undefined,
+    onResetManualState: () => undefined,
+    onManualSave: () => undefined
+  });
 }
 
 function emptyPlayerIndex(): PlayerIndex {

@@ -7,6 +7,7 @@ export interface SidebarViewModel {
   recommendations: CandidateRecommendation[];
   gaps: string[];
   skipAdvice: SkipAdvice;
+  loading?: string | null;
   error: string | null;
   onEdit: () => void;
   onRetry: () => void;
@@ -71,6 +72,7 @@ export function renderSidebar(root: Element | ShadowRoot, viewModel: SidebarView
         </header>
 
         ${viewModel.error ? errorCard(viewModel.error) : ""}
+        ${viewModel.loading ? loadingCard(viewModel.loading) : ""}
         ${bestPickCard(viewModel.recommendations[0])}
         ${recommendationsTable(viewModel.recommendations)}
         ${skipAdviceCard(viewModel.skipAdvice)}
@@ -244,6 +246,15 @@ function errorCard(error: string): string {
       <p class="assistant-card-title">Data unavailable</p>
       <p class="assistant-copy">${escapeHtml(error)}</p>
       <button class="assistant-button assistant-button--compact" type="button" data-action="retry">Retry</button>
+    </section>
+  `;
+}
+
+function loadingCard(message: string): string {
+  return `
+    <section class="assistant-card assistant-card--loading" aria-label="Sidebar loading">
+      <p class="assistant-card-title">Loading</p>
+      <p class="assistant-copy">${escapeHtml(message)}</p>
     </section>
   `;
 }

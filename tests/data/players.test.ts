@@ -4,6 +4,7 @@ import {
   getPlayersForRoll,
   loadPlayers,
   normalizePlayers,
+  resolvePlayersUrl,
   type PlayerIndex
 } from "../../src/data/players";
 
@@ -77,6 +78,18 @@ describe("player data", () => {
 
     expect(fetchImpl).toHaveBeenCalledWith("https://www.82-0.com/players_flat.json");
     expect(index.players).toHaveLength(2);
+  });
+
+  it("resolves the player endpoint from the active 82-0 origin", () => {
+    expect(resolvePlayersUrl({ origin: "https://www.82-0.com", hostname: "www.82-0.com" })).toBe(
+      "https://www.82-0.com/players_flat.json"
+    );
+    expect(resolvePlayersUrl({ origin: "https://82-0.com", hostname: "82-0.com" })).toBe(
+      "https://82-0.com/players_flat.json"
+    );
+    expect(resolvePlayersUrl({ origin: "https://example.com", hostname: "example.com" })).toBe(
+      "https://www.82-0.com/players_flat.json"
+    );
   });
 
   it("rejects malformed player endpoint payloads", async () => {

@@ -44,6 +44,32 @@ afterEach(() => {
 });
 
 describe("content entrypoint", () => {
+  it("renders a loading state while player data is still fetching", async () => {
+    let resolveFetch!: (value: PlayerIndex) => void;
+    const fetchPlayers = vi.fn(
+      async () =>
+        new Promise<PlayerIndex>((resolve) => {
+          resolveFetch = resolve;
+        })
+    );
+
+    const start = startAssistant({
+      fetchPlayers,
+      observeMutations: false
+    });
+
+    const host = document.getElementById("assistant-82-0-host");
+    expect(fetchPlayers).toHaveBeenCalledTimes(1);
+    expect(host?.shadowRoot?.textContent).toContain("Loading player data");
+
+    resolveFetch({
+      players: [kobe],
+      byRoll: new Map([["LAL::2000s", [kobe]]]),
+      byName: new Map()
+    });
+    await start;
+  });
+
   it("mounts the assistant host and renders after player data loads", async () => {
     document.body.innerHTML = `
       <main>
