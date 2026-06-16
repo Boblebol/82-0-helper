@@ -49,7 +49,7 @@ export function evaluateRoll(input: RollEvaluationInput): RollEvaluation {
       if (right.deltaCeilingWins !== left.deltaCeilingWins) {
         return right.deltaCeilingWins - left.deltaCeilingWins;
       }
-      return right.withPickWins - left.withPickWins;
+      return 0;
     })
     .slice(0, 5);
 
@@ -65,7 +65,7 @@ export function rosterGaps(roster: Roster): string[] {
     PPG: players.reduce((sum, player) => sum + player.ppg, 0) / 133.4,
     REB: players.reduce((sum, player) => sum + player.rpg, 0) / 39.7,
     AST: players.reduce((sum, player) => sum + player.apg, 0) / 29.3,
-    STL: players.reduce((sum, player) => sum + (player.spg ?? 0), 0) / 3.2,
+    STL: players.reduce((sum, player) => sum + (player.spg ?? 0), 0) / 6.1,
     BLK: players.reduce((sum, player) => sum + (player.bpg ?? 0), 0) / 3.2
   };
 

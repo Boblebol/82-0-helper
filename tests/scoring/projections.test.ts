@@ -30,15 +30,15 @@ const guard = player("Elite Guard", "guard", "BOS", "1980s", ["PG"], 25, 5, 11, 
 const forward = player("Elite Forward", "forward", "BOS", "1980s", ["PF"], 24, 12, 4, 1.2, 1.8);
 
 describe("projections", () => {
-  it("ranks candidates by best final outcome and legal position", () => {
+  it("ranks candidates by final outcome and preserves roll order on projection ties", () => {
     const result = evaluateRoll({
       roster: {},
       currentCandidates: [rolePlayer, shaq, kobe],
       allPlayers: [rolePlayer, shaq, kobe, guard, forward]
     });
 
-    expect(result.recommendations[0].player.name).toBe("Shaquille O'Neal");
-    expect(result.recommendations[0].position).toBe("C");
+    expect(result.recommendations[0].player.name).toBe("Role Player");
+    expect(result.recommendations[0].position).toBe("SF");
     expect(result.recommendations).toHaveLength(3);
     expect(result.recommendations[0].deltaExpectedWins).toBeGreaterThanOrEqual(result.recommendations[2].deltaExpectedWins);
   });
@@ -56,7 +56,7 @@ describe("projections", () => {
   });
 
   it("identifies roster gaps by weakest category share", () => {
-    expect(rosterGaps({ C: shaq })).toEqual(["AST", "STL", "PPG"]);
+    expect(rosterGaps({ C: shaq })).toEqual(["STL", "AST", "PPG"]);
   });
 
   it("returns keep advice when the current roll is strong", () => {
