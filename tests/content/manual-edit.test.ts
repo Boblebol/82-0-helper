@@ -36,6 +36,7 @@ describe("manual edit UI", () => {
       error: null,
       onEdit: vi.fn(),
       onRetry: vi.fn(),
+      onScanPage: vi.fn(),
       onResetManualState: vi.fn(),
       onManualSave: vi.fn()
     });
@@ -59,6 +60,7 @@ describe("manual edit UI", () => {
       error: null,
       onEdit,
       onRetry: vi.fn(),
+      onScanPage: vi.fn(),
       onResetManualState: vi.fn(),
       onManualSave: vi.fn()
     });
@@ -92,6 +94,7 @@ describe("manual edit UI", () => {
       error: null,
       onEdit: vi.fn(),
       onRetry: vi.fn(),
+      onScanPage: vi.fn(),
       onResetManualState: vi.fn(),
       onManualSave
     });
@@ -132,6 +135,7 @@ describe("manual edit UI", () => {
       error: null,
       onEdit: vi.fn(),
       onRetry: vi.fn(),
+      onScanPage: vi.fn(),
       onResetManualState: vi.fn(),
       onManualSave
     });
@@ -162,6 +166,7 @@ describe("manual edit UI", () => {
       error: null,
       onEdit: vi.fn(),
       onRetry: vi.fn(),
+      onScanPage: vi.fn(),
       onResetManualState: vi.fn(),
       onManualSave
     });

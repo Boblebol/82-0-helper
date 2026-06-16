@@ -210,6 +210,68 @@ describe("content entrypoint", () => {
     expect(host?.shadowRoot?.textContent).toContain("Kobe Bryant");
   });
 
+  it("scans the current page, clears manual corrections, and rerenders without refetching players", async () => {
+    const memory = new Map<string, unknown>();
+    const remove = vi.fn(async (key: string) => {
+      memory.delete(key);
+    });
+    vi.stubGlobal("chrome", {
+      storage: {
+        local: {
+          get: vi.fn(async (key: string) => ({ [key]: memory.get(key) })),
+          set: vi.fn(async (value: Record<string, unknown>) => {
+            for (const [key, stored] of Object.entries(value)) memory.set(key, stored);
+          }),
+          remove
+        }
+      }
+    });
+
+    const fetchPlayers = vi.fn(async () => ({
+      players: [kobe, bird],
+      byRoll: new Map([
+        ["LAL::2000s", [kobe]],
+        ["BOS::1990s", [bird]]
+      ]),
+      byName: new Map()
+    }));
+
+    await chrome.storage.local.set({
+      "82-0-assistant-manual-state": {
+        team: "BOS",
+        decade: "1990s"
+      }
+    });
+
+    document.body.innerHTML = `
+      <main>
+        <p>Classic</p>
+        <p>Round 1</p>
+        <h2>LAL 2000s</h2>
+        <button>Kobe Bryant 30.0 PPG</button>
+      </main>
+    `;
+
+    await startAssistant({
+      fetchPlayers,
+      observeMutations: false
+    });
+
+    const host = document.getElementById("assistant-82-0-host");
+    expect(host?.shadowRoot?.textContent).toContain("BOS 1990s");
+    expect(host?.shadowRoot?.textContent).toContain("Larry Bird");
+
+    host?.shadowRoot?.querySelector<HTMLButtonElement>("button[data-action='scan-page']")?.click();
+    for (let index = 0; index < 5; index++) {
+      await Promise.resolve();
+    }
+
+    expect(remove).toHaveBeenCalledWith("82-0-assistant-manual-state");
+    expect(fetchPlayers).toHaveBeenCalledTimes(1);
+    expect(host?.shadowRoot?.textContent).toContain("LAL 2000s");
+    expect(host?.shadowRoot?.textContent).toContain("Kobe Bryant");
+  });
+
   it("saves partial manual corrections without clearing detected state", async () => {
     const memory = new Map<string, unknown>();
     const set = vi.fn(async (value: Record<string, unknown>) => {

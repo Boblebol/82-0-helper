@@ -11,6 +11,7 @@ export interface SidebarViewModel {
   error: string | null;
   onEdit: () => void;
   onRetry: () => void;
+  onScanPage: () => void;
   onResetManualState: () => void;
   onManualSave: (state: {
     team: string | null;
@@ -81,6 +82,7 @@ export function renderSidebar(root: Element | ShadowRoot, viewModel: SidebarView
         ${manualEditPanel(viewModel.state, wasEditing)}
 
         <footer class="assistant-actions">
+          <button class="assistant-button" type="button" data-action="scan-page">Scan page</button>
           <button class="assistant-button" type="button" data-action="edit">Edit roster</button>
           <button class="assistant-button assistant-button--ghost" type="button" data-action="reset-manual">Reset manual</button>
         </footer>
@@ -106,6 +108,7 @@ function ensureSidebarContainer(root: Element | ShadowRoot): HTMLElement {
 function wireEvents(root: Element | ShadowRoot, viewModel: SidebarViewModel): void {
   const editButton = root.querySelector<HTMLButtonElement>("button[data-action='edit']");
   const retryButton = root.querySelector<HTMLButtonElement>("button[data-action='retry']");
+  const scanButton = root.querySelector<HTMLButtonElement>("button[data-action='scan-page']");
   const resetButton = root.querySelector<HTMLButtonElement>("button[data-action='reset-manual']");
   const toggleButton = root.querySelector<HTMLButtonElement>("button[data-action='toggle']");
   const shell = root.querySelector<HTMLElement>(".assistant-shell");
@@ -117,6 +120,7 @@ function wireEvents(root: Element | ShadowRoot, viewModel: SidebarViewModel): vo
     setEditingState(shell, toggleButton, editPanel, !isEditing);
   });
   retryButton?.addEventListener("click", () => viewModel.onRetry());
+  scanButton?.addEventListener("click", () => viewModel.onScanPage());
   resetButton?.addEventListener("click", () => viewModel.onResetManualState());
   toggleButton?.addEventListener("click", () => {
     const isOpen = shell?.classList.toggle("is-open") ?? false;

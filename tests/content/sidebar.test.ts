@@ -56,6 +56,7 @@ describe("sidebar", () => {
       error: null,
       onEdit: vi.fn(),
       onRetry: vi.fn(),
+      onScanPage: vi.fn(),
       onResetManualState: vi.fn(),
       onManualSave: vi.fn()
     });
@@ -82,6 +83,7 @@ describe("sidebar", () => {
       error: "players data unavailable",
       onEdit: vi.fn(),
       onRetry: vi.fn(),
+      onScanPage: vi.fn(),
       onResetManualState: vi.fn(),
       onManualSave: vi.fn()
     });
@@ -90,10 +92,11 @@ describe("sidebar", () => {
     expect(root.querySelector("button[data-action='retry']")).not.toBeNull();
   });
 
-  it("invokes edit, retry, reset, and toggle callbacks", () => {
+  it("invokes edit, retry, scan, reset, and toggle callbacks", () => {
     const root = document.createElement("div");
     const onEdit = vi.fn();
     const onRetry = vi.fn();
+    const onScanPage = vi.fn();
     const onResetManualState = vi.fn();
 
     renderSidebar(root, {
@@ -104,17 +107,20 @@ describe("sidebar", () => {
       error: "players data unavailable",
       onEdit,
       onRetry,
+      onScanPage,
       onResetManualState,
       onManualSave: vi.fn()
     });
 
     root.querySelector<HTMLButtonElement>("button[data-action='edit']")?.click();
     root.querySelector<HTMLButtonElement>("button[data-action='retry']")?.click();
+    root.querySelector<HTMLButtonElement>("button[data-action='scan-page']")?.click();
     root.querySelector<HTMLButtonElement>("button[data-action='reset-manual']")?.click();
     root.querySelector<HTMLButtonElement>("button[data-action='toggle']")?.click();
 
     expect(onEdit).toHaveBeenCalledTimes(1);
     expect(onRetry).toHaveBeenCalledTimes(1);
+    expect(onScanPage).toHaveBeenCalledTimes(1);
     expect(onResetManualState).toHaveBeenCalledTimes(1);
     expect(root.querySelector(".assistant-shell")?.classList.contains("is-open")).toBe(true);
   });
@@ -130,6 +136,7 @@ describe("sidebar", () => {
       error: null,
       onEdit: vi.fn(),
       onRetry: vi.fn(),
+      onScanPage: vi.fn(),
       onResetManualState: vi.fn(),
       onManualSave: vi.fn()
     });
@@ -155,6 +162,7 @@ describe("sidebar", () => {
       error: null,
       onEdit: vi.fn(),
       onRetry: vi.fn(),
+      onScanPage: vi.fn(),
       onResetManualState: vi.fn(),
       onManualSave: vi.fn()
     });
@@ -169,6 +177,7 @@ describe("sidebar", () => {
       error: null,
       onEdit: vi.fn(),
       onRetry: vi.fn(),
+      onScanPage: vi.fn(),
       onResetManualState: vi.fn(),
       onManualSave: vi.fn()
     });
@@ -195,6 +204,7 @@ describe("sidebar", () => {
       error: '<img src=x onerror=alert(1)>',
       onEdit: vi.fn(),
       onRetry: vi.fn(),
+      onScanPage: vi.fn(),
       onResetManualState: vi.fn(),
       onManualSave: vi.fn()
     });

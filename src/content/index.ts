@@ -97,6 +97,12 @@ async function renderWithState(
     onRetry: () => {
       void startAssistant(options);
     },
+    onScanPage: async () => {
+      await clearManualState();
+      if (!isStale(runId)) {
+        await renderWithState(root, index, options, runId, error);
+      }
+    },
     onResetManualState: async () => {
       await clearManualState();
       if (!isStale(runId)) {
@@ -162,6 +168,7 @@ function renderLoadingState(root: ShadowRoot): void {
     error: null,
     onEdit: () => undefined,
     onRetry: () => undefined,
+    onScanPage: () => undefined,
     onResetManualState: () => undefined,
     onManualSave: () => undefined
   });

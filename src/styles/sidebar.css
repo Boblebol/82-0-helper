@@ -312,7 +312,8 @@
 }
 
 .assistant-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-top: 8px;
 }
@@ -326,8 +327,11 @@
   background: #1b2024;
   color: #eef1f4;
   font: inherit;
+  font-size: 13px;
   font-weight: 700;
+  line-height: 1.2;
   cursor: pointer;
+  white-space: normal;
 }
 
 .assistant-button--ghost {
