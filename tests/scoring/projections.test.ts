@@ -82,6 +82,23 @@ describe("projections", () => {
     expect(result.recommendations[0].ceilingRoster.C?.id).toBe("flex");
   });
 
+  it("deduplicates ceiling candidates by base slug before applying the position cap", () => {
+    const duplicateFlexibleBigs = Array.from({ length: 13 }, (_, index) => ({
+      ...player(`Duplicate Flexible ${index}`, `cap-duplicate-${String(12 - index).padStart(2, "0")}`, "NYK", "1990s", ["PG", "C"], 28, 9, 7, 1, 1),
+      baseSlug: "cap-duplicate"
+    }));
+    const capGuard = player("Cap Guard", "cap-guard", "NYK", "1990s", ["PG"], 20, 4, 8, 1, 0.2);
+    const capCenter = player("Cap Center", "cap-center", "NYK", "1990s", ["C"], 1, 1, 0, 0, 0);
+    const result = evaluateRoll({
+      roster: {},
+      currentCandidates: [starterWing],
+      allPlayers: [starterWing, ...duplicateFlexibleBigs, capGuard, capCenter]
+    });
+
+    expect(result.recommendations[0].ceilingRoster.PG?.id).toBe("cap-guard");
+    expect(result.recommendations[0].ceilingRoster.C?.id).toBe("cap-duplicate-00");
+  });
+
   it("identifies roster gaps by weakest category share", () => {
     expect(rosterGaps({ C: shaq })).toEqual(["STL", "AST", "PPG"]);
   });

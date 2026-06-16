@@ -1,7 +1,33 @@
 import type { Player, Position, Roster } from "../domain/types";
-import { calculateTeamResult, canPlayerPlayPosition, openPositions, placePlayer, rosterPlayers, type TeamResult } from "./formula";
+import { calculateTeamResult, canPlayerPlayPosition, openPositions, placePlayer, projectedWins, rosterPlayers, roundToTenth, type TeamResult } from "./formula";
 
-const CEILING_CANDIDATES_PER_POSITION = 12;
+const CEILING_CANDIDATES_PER_POSITION = 5;
+const PROJECTION_WEIGHTS = {
+  ppg: 0.46,
+  rpg: 0.25,
+  apg: 0.18,
+  spg: 0.07,
+  bpg: 0.04
+} as const;
+const PROJECTION_BASELINES = {
+  ppg: 133.4,
+  rpg: 39.7,
+  apg: 29.3,
+  spg: 6.1,
+  bpg: 3.2
+} as const;
+
+type PlayerPoolsByPosition = Map<Position, Player[]>;
+type CandidateResult = { player: Player; result: TeamResult };
+interface RosterStatTotals {
+  ppg: number;
+  rpg: number;
+  apg: number;
+  spg: number;
+  spgCount: number;
+  bpg: number;
+  bpgCount: number;
+}
 
 export interface RollEvaluationInput {
   roster: Roster;
@@ -43,9 +69,10 @@ export interface SkipAdvice {
 export function evaluateRoll(input: RollEvaluationInput): RollEvaluation {
   const currentWins = calculateTeamResult(input.roster).wins;
   const selectedBaseSlugs = new Set(rosterPlayers(input.roster).map((player) => player.baseSlug));
+  const playerPools = groupPlayersByPosition(input.allPlayers);
   const recommendations = input.currentCandidates
     .filter((player) => !selectedBaseSlugs.has(player.baseSlug))
-    .flatMap((player) => bestPlacementForPlayer(input.roster, player, input.allPlayers, currentWins))
+    .flatMap((player) => bestPlacementForPlayer(input.roster, player, playerPools, currentWins))
     .sort(compareRecommendations)
     .slice(0, 5);
 
@@ -90,14 +117,14 @@ export function recommendSkip(input: SkipAdviceInput): SkipAdvice {
   return { kind: "keep", reason: "The current roll is strong relative to reroll options." };
 }
 
-function bestPlacementForPlayer(roster: Roster, player: Player, allPlayers: Player[], currentWins: number): CandidateRecommendation[] {
+function bestPlacementForPlayer(roster: Roster, player: Player, playerPools: PlayerPoolsByPosition, currentWins: number): CandidateRecommendation[] {
   return openPositions(roster)
     .filter((position) => canPlayerPlayPosition(player, position))
     .map((position) => {
       const withPickRoster = placePlayer(roster, position, player);
       const withPickWins = calculateTeamResult(withPickRoster).wins;
-      const expectedRoster = completeRoster(withPickRoster, allPlayers, "expected");
-      const ceilingRoster = completeRoster(withPickRoster, allPlayers, "ceiling");
+      const expectedRoster = completeRoster(withPickRoster, playerPools, "expected");
+      const ceilingRoster = completeRoster(withPickRoster, playerPools, "ceiling");
       const expectedWins = calculateTeamResult(expectedRoster).wins;
       const ceilingWins = calculateTeamResult(ceilingRoster).wins;
 
@@ -118,20 +145,20 @@ function bestPlacementForPlayer(roster: Roster, player: Player, allPlayers: Play
     .slice(0, 1);
 }
 
-function completeRoster(roster: Roster, allPlayers: Player[], mode: "expected" | "ceiling"): Roster {
+function completeRoster(roster: Roster, playerPools: PlayerPoolsByPosition, mode: "expected" | "ceiling"): Roster {
   if (mode === "ceiling") {
-    return completeCeilingRoster(roster, allPlayers);
+    return completeCeilingRoster(roster, playerPools);
   }
 
   let completed = { ...roster };
   const usedBaseSlugs = new Set(rosterPlayers(completed).map((player) => player.baseSlug));
 
   for (const position of openPositions(completed)) {
-    const candidates = allPlayers
+    const totals = rosterStatTotals(completed);
+    const candidates = (playerPools.get(position) ?? [])
       .filter((player) => !usedBaseSlugs.has(player.baseSlug))
-      .filter((player) => canPlayerPlayPosition(player, position))
-      .map((player) => ({ player, wins: calculateTeamResult(placePlayer(completed, position, player)).wins }))
-      .sort((left, right) => right.wins - left.wins);
+      .map((player) => ({ player, wins: resultWithPlayer(totals, player).wins }))
+      .sort(compareCandidateWins);
 
     const chosen = medianTopQuintile(candidates);
     if (chosen) {
@@ -143,19 +170,13 @@ function completeRoster(roster: Roster, allPlayers: Player[], mode: "expected" |
   return completed;
 }
 
-function completeCeilingRoster(roster: Roster, allPlayers: Player[]): Roster {
+function completeCeilingRoster(roster: Roster, playerPools: PlayerPoolsByPosition): Roster {
   const positions = openPositions(roster);
   const initiallyUsedBaseSlugs = new Set(rosterPlayers(roster).map((player) => player.baseSlug));
   const candidatesByPosition = new Map(
     positions.map((position) => [
       position,
-      allPlayers
-        .filter((player) => !initiallyUsedBaseSlugs.has(player.baseSlug))
-        .filter((player) => canPlayerPlayPosition(player, position))
-        .map((player) => ({ player, result: calculateTeamResult(placePlayer(roster, position, player)) }))
-        .sort((left, right) => compareTeamResults(left.result, right.result))
-        .slice(0, CEILING_CANDIDATES_PER_POSITION)
-        .map(({ player }) => player)
+      topCeilingCandidates(roster, position, playerPools.get(position) ?? [], initiallyUsedBaseSlugs)
     ])
   );
 
@@ -173,9 +194,13 @@ function completeCeilingRoster(roster: Roster, allPlayers: Player[]): Roster {
     }
 
     const position = positions[index];
-    search(index + 1, currentRoster, usedBaseSlugs);
+    const candidates = candidatesByPosition.get(position) ?? [];
+    if (candidates.length === 0) {
+      search(index + 1, currentRoster, usedBaseSlugs);
+      return;
+    }
 
-    for (const player of candidatesByPosition.get(position) ?? []) {
+    for (const player of candidates) {
       if (usedBaseSlugs.has(player.baseSlug)) {
         continue;
       }
@@ -190,6 +215,104 @@ function completeCeilingRoster(roster: Roster, allPlayers: Player[]): Roster {
   return bestRoster;
 }
 
+function groupPlayersByPosition(players: Player[]): PlayerPoolsByPosition {
+  const pools: PlayerPoolsByPosition = new Map();
+  for (const player of players) {
+    for (const position of player.positions) {
+      const pool = pools.get(position);
+      if (pool) {
+        pool.push(player);
+      } else {
+        pools.set(position, [player]);
+      }
+    }
+  }
+  return pools;
+}
+
+function topCeilingCandidates(roster: Roster, position: Position, legalPlayers: Player[], usedBaseSlugs: Set<string>): Player[] {
+  const totals = rosterStatTotals(roster);
+  const bestByBaseSlug = new Map<string, CandidateResult>();
+  for (const player of legalPlayers) {
+    if (usedBaseSlugs.has(player.baseSlug)) {
+      continue;
+    }
+
+    const entry = { player, result: resultWithPlayer(totals, player) };
+    const previous = bestByBaseSlug.get(player.baseSlug);
+    if (!previous || compareCandidateResults(entry, previous) < 0) {
+      bestByBaseSlug.set(player.baseSlug, entry);
+    }
+  }
+
+  const top: CandidateResult[] = [];
+  for (const entry of bestByBaseSlug.values()) {
+    insertTopCandidate(top, entry, CEILING_CANDIDATES_PER_POSITION);
+  }
+  return top.map(({ player }) => player);
+}
+
+function rosterStatTotals(roster: Roster): RosterStatTotals {
+  return rosterPlayers(roster).reduce<RosterStatTotals>(
+    (totals, player) => addPlayerToTotals(totals, player),
+    { ppg: 0, rpg: 0, apg: 0, spg: 0, spgCount: 0, bpg: 0, bpgCount: 0 }
+  );
+}
+
+function resultWithPlayer(totals: RosterStatTotals, player: Player): TeamResult {
+  const spg = positiveStat(player.spg);
+  const bpg = positiveStat(player.bpg);
+  const spgTotal = totals.spg + spg;
+  const spgCount = totals.spgCount + (spg > 0 ? 1 : 0);
+  const bpgTotal = totals.bpg + bpg;
+  const bpgCount = totals.bpgCount + (bpg > 0 ? 1 : 0);
+  const adjustedSpg = spgTotal * (spgCount > 0 ? 5 / spgCount : 1);
+  const adjustedBpg = bpgTotal * (bpgCount > 0 ? 5 / bpgCount : 1);
+  const teamRating = roundToTenth(
+    100 *
+      ((totals.ppg + player.ppg) / PROJECTION_BASELINES.ppg * PROJECTION_WEIGHTS.ppg +
+        (totals.rpg + player.rpg) / PROJECTION_BASELINES.rpg * PROJECTION_WEIGHTS.rpg +
+        (totals.apg + player.apg) / PROJECTION_BASELINES.apg * PROJECTION_WEIGHTS.apg +
+        adjustedSpg / PROJECTION_BASELINES.spg * PROJECTION_WEIGHTS.spg +
+        adjustedBpg / PROJECTION_BASELINES.bpg * PROJECTION_WEIGHTS.bpg)
+  );
+  const wins = projectedWins(teamRating);
+  return { teamRating, wins, losses: 82 - wins };
+}
+
+function addPlayerToTotals(totals: RosterStatTotals, player: Player): RosterStatTotals {
+  const spg = positiveStat(player.spg);
+  const bpg = positiveStat(player.bpg);
+  return {
+    ppg: totals.ppg + player.ppg,
+    rpg: totals.rpg + player.rpg,
+    apg: totals.apg + player.apg,
+    spg: totals.spg + spg,
+    spgCount: totals.spgCount + (spg > 0 ? 1 : 0),
+    bpg: totals.bpg + bpg,
+    bpgCount: totals.bpgCount + (bpg > 0 ? 1 : 0)
+  };
+}
+
+function positiveStat(value: number | null): number {
+  return typeof value === "number" && value > 0 ? value : 0;
+}
+
+function insertTopCandidate(top: CandidateResult[], entry: CandidateResult, limit: number): void {
+  const index = top.findIndex((candidate) => compareCandidateResults(entry, candidate) < 0);
+  if (index === -1) {
+    if (top.length < limit) {
+      top.push(entry);
+    }
+    return;
+  }
+
+  top.splice(index, 0, entry);
+  if (top.length > limit) {
+    top.pop();
+  }
+}
+
 function compareRecommendations(left: CandidateRecommendation, right: CandidateRecommendation): number {
   if (right.deltaExpectedWins !== left.deltaExpectedWins) {
     return right.deltaExpectedWins - left.deltaExpectedWins;
@@ -200,11 +323,30 @@ function compareRecommendations(left: CandidateRecommendation, right: CandidateR
   return 0;
 }
 
+function compareCandidateWins(left: { player: Player; wins: number }, right: { player: Player; wins: number }): number {
+  if (right.wins !== left.wins) {
+    return right.wins - left.wins;
+  }
+  return comparePlayerIds(left.player, right.player);
+}
+
+function compareCandidateResults(left: { player: Player; result: TeamResult }, right: { player: Player; result: TeamResult }): number {
+  const resultComparison = compareTeamResults(left.result, right.result);
+  if (resultComparison !== 0) {
+    return resultComparison;
+  }
+  return comparePlayerIds(left.player, right.player);
+}
+
 function compareTeamResults(left: TeamResult, right: TeamResult): number {
   if (right.wins !== left.wins) {
     return right.wins - left.wins;
   }
   return right.teamRating - left.teamRating;
+}
+
+function comparePlayerIds(left: Player, right: Player): number {
+  return left.id.localeCompare(right.id);
 }
 
 function isBetterTeamResult(candidate: TeamResult, currentBest: TeamResult): boolean {
