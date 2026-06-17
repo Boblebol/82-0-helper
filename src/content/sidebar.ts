@@ -26,6 +26,7 @@ const STYLE_ID = "assistant-82-0-sidebar-style";
 const POSITION_ORDER: Position[] = ["PG", "SG", "SF", "PF", "C"];
 const HELP_TEXT = {
   bestPick: "Le meilleur joueur à prendre maintenant selon le gain immédiat et la projection du roster.",
+  pickImpact: "Gain immédiat en victoires si ce joueur est ajouté maintenant, sans supposer les prochains picks.",
   projection: "Projection réaliste après ce choix, en complétant l'équipe avec des picks probables.",
   ceiling: "Meilleur scénario estimé si les prochains choix se passent très bien.",
   alternatives: "Les autres joueurs visibles classés avec la même logique de projection.",
@@ -345,6 +346,7 @@ function bestPickCard(recommendation?: CandidateRecommendation): string {
         <div class="assistant-position">${escapeHtml(recommendation.position)}</div>
       </div>
       <div class="assistant-stats">
+        <div>Impact pick ${formatDelta(pickImpactWins(recommendation))} ${helpButton(HELP_TEXT.pickImpact)}</div>
         <div>Projection réaliste ${formatWins(recommendation.expectedWins)} ${helpButton(HELP_TEXT.projection)}</div>
         <div>Plafond ${formatWins(recommendation.ceilingWins)} ${helpButton(HELP_TEXT.ceiling)}</div>
         <div>Gain réaliste ${formatDelta(recommendation.deltaExpectedWins)} ${helpButton(HELP_TEXT.projection)}</div>
@@ -370,6 +372,7 @@ function recommendationsTable(recommendations: CandidateRecommendation[]): strin
         <tr>
           <td>${escapeHtml(recommendation.player.name)}</td>
           <td>${escapeHtml(recommendation.position)}</td>
+          <td>${formatDelta(pickImpactWins(recommendation))}</td>
           <td>${formatWins(recommendation.expectedWins)}</td>
           <td>${formatWins(recommendation.ceilingWins)}</td>
           <td>${formatDelta(recommendation.deltaExpectedWins)}</td>
@@ -387,6 +390,7 @@ function recommendationsTable(recommendations: CandidateRecommendation[]): strin
             <tr>
               <th scope="col">Joueur</th>
               <th scope="col">Pos</th>
+              <th scope="col">Impact</th>
               <th scope="col">Réaliste</th>
               <th scope="col">Plafond</th>
               <th scope="col">Gain</th>
@@ -485,6 +489,10 @@ function gapsCard(gaps: string[]): string {
 
 function formatWins(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+function pickImpactWins(recommendation: CandidateRecommendation): number {
+  return recommendation.withPickWins - recommendation.currentWins;
 }
 
 function formatDelta(value: number): string {
