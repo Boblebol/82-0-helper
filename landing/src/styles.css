@@ -413,8 +413,11 @@ a {
 }
 
 .section,
+.game-section,
 .install-section,
-.closing-section {
+.release-section,
+.closing-section,
+.site-footer {
   max-width: 1180px;
   margin: 0 auto;
   padding: 96px 32px 0;
@@ -425,12 +428,41 @@ a {
 }
 
 .section h2,
+.game-section h2,
 .install-section h2,
-.closing-section h2 {
+.closing-section h2,
+.site-footer h2 {
   margin: 0;
   color: var(--text);
   font-size: 42px;
   line-height: 1.08;
+}
+
+.game-section {
+  display: grid;
+  grid-template-columns: 0.92fr 1.08fr;
+  gap: 52px;
+  align-items: start;
+}
+
+.game-copy {
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.game-copy p {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.6;
+  overflow-wrap: break-word;
+}
+
+.game-copy p:last-of-type {
+  margin-bottom: 22px;
 }
 
 .feature-grid {
@@ -463,8 +495,10 @@ a {
 }
 
 .feature-grid p,
+.release-section p,
 .install-copy p,
-.closing-section p {
+.closing-section p,
+.site-footer p {
   color: var(--muted);
   font-size: 16px;
   line-height: 1.58;
@@ -531,6 +565,71 @@ a {
   line-height: 1.5;
 }
 
+.release-section .section-heading {
+  max-width: 760px;
+}
+
+.release-section .section-heading p {
+  margin-bottom: 0;
+}
+
+.release-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.release-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 310px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.release-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.release-card h3 {
+  margin: 18px 0 0;
+  font-size: 20px;
+}
+
+.release-card p {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.release-card ul {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 20px;
+  padding-left: 18px;
+  color: #343b43;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.release-card a {
+  margin-top: auto;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 900;
+}
+
 code {
   border: 1px solid #ccd3da;
   border-radius: 6px;
@@ -545,7 +644,6 @@ code {
   justify-content: space-between;
   gap: 32px;
   align-items: center;
-  padding-bottom: 78px;
 }
 
 .closing-section > div:first-child {
@@ -556,6 +654,37 @@ code {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  margin-top: 96px;
+  padding-top: 42px;
+  padding-bottom: 42px;
+  border-top: 1px solid var(--line);
+}
+
+.site-footer > div {
+  max-width: 700px;
+}
+
+.site-footer h2 {
+  font-size: 28px;
+}
+
+.footer-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--text);
+  font-weight: 900;
 }
 
 @media (max-width: 980px) {
@@ -606,8 +735,10 @@ code {
   }
 
   .summary-band,
+  .game-section,
   .feature-grid,
-  .install-section {
+  .install-section,
+  .release-list {
     grid-template-columns: 1fr;
   }
 
@@ -625,9 +756,26 @@ code {
   }
 
   .section,
+  .game-section,
   .install-section,
-  .closing-section {
+  .release-section,
+  .closing-section,
+  .site-footer {
     padding: 72px 18px 0;
+  }
+
+  .section,
+  .game-section,
+  .install-section,
+  .release-section,
+  .closing-section,
+  .site-footer,
+  .game-copy,
+  .release-card,
+  .install-steps li,
+  .feature-grid article {
+    width: 340px;
+    max-width: 100%;
   }
 
   .install-copy {
@@ -637,7 +785,14 @@ code {
   .closing-section {
     align-items: flex-start;
     flex-direction: column;
-    padding-bottom: 60px;
+  }
+
+  .site-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    margin-top: 72px;
+    padding-top: 34px;
+    padding-bottom: 34px;
   }
 }
 
@@ -717,8 +872,40 @@ code {
   }
 
   .section h2,
+  .game-section h2,
   .install-section h2,
   .closing-section h2 {
     font-size: 32px;
+  }
+
+  .section,
+  .game-section,
+  .install-section,
+  .release-section,
+  .closing-section,
+  .site-footer {
+    width: 340px;
+    max-width: calc(100vw - 36px);
+    margin-right: 18px;
+    margin-left: 18px;
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .game-copy,
+  .release-card,
+  .install-steps li,
+  .feature-grid article {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .site-footer h2 {
+    font-size: 24px;
+  }
+
+  .footer-link {
+    width: 100%;
+    justify-content: center;
   }
 }

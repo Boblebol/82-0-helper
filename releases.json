@@ -1,0 +1,61 @@
+{
+  "project": "82-0 Helper",
+  "repository": "https://github.com/Boblebol/82-0-helper",
+  "releases": [
+    {
+      "version": "0.2.0",
+      "tag": "v0.2.0",
+      "date": "2026-06-17",
+      "title": "Landing page et versioning",
+      "summary": "Ajoute une landing Netlify, un changelog généré depuis releases.json et un historique visible sur le site.",
+      "releaseUrl": "https://github.com/Boblebol/82-0-helper/releases/tag/v0.2.0",
+      "downloadUrl": "https://github.com/Boblebol/82-0-helper/releases/download/v0.2.0/82-0-helper-v0.2.0.zip",
+      "changes": {
+        "added": [
+          "Landing page Netlify avec téléchargement direct et guide d'installation.",
+          "Section simple qui explique le but du jeu 82-0 et renvoie vers le site original.",
+          "Footer créateur avec présentation courte d'Alexandre Enouf et lien vers son site.",
+          "Fichier releases.json utilisé comme source unique pour le changelog et la landing."
+        ],
+        "changed": [
+          "La landing utilise automatiquement la dernière version téléchargeable."
+        ]
+      }
+    },
+    {
+      "version": "0.1.1",
+      "tag": "v0.1.1",
+      "date": "2026-06-17",
+      "title": "Release publique initiale",
+      "summary": "Publie l'extension open source avec version d'extension alignée et correctif des aides contextuelles.",
+      "releaseUrl": "https://github.com/Boblebol/82-0-helper/releases/tag/v0.1.1",
+      "downloadUrl": "https://github.com/Boblebol/82-0-helper/releases/download/v0.1.1/82-0-classic-assistant-v0.1.1.zip",
+      "changes": {
+        "changed": [
+          "Bump package et manifest en 0.1.1 pour la release publique."
+        ],
+        "fixed": [
+          "Les bulles d'aide restent dans les cartes de la sidebar au lieu de déborder."
+        ]
+      }
+    },
+    {
+      "version": "0.1.0",
+      "tag": "v0.1.0",
+      "date": "2026-06-17",
+      "title": "Assistant Classic mode",
+      "summary": "Première version utilisable de l'assistant navigateur pour 82-0 Classic.",
+      "releaseUrl": "https://github.com/Boblebol/82-0-helper/releases/tag/v0.1.0",
+      "changes": {
+        "added": [
+          "Sidebar de recommandations pour le mode Classic de 82-0.",
+          "Détection du roll courant: équipe, décennie, round, roster et joueurs visibles.",
+          "Scoring des picks avec impact estimé en points de jeu.",
+          "Conseils de reroll avec probabilités de trouver mieux.",
+          "Corrections manuelles du roll et du roster.",
+          "Interface française avec thème clair inspiré de 82-0."
+        ]
+      }
+    }
+  ]
+}

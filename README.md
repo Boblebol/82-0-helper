@@ -91,6 +91,18 @@ Netlify uses `netlify.toml`:
 - build command: `npm run build:landing`
 - publish directory: `landing/dist`
 
+The landing page reads release metadata from `releases.json` so download links and the public version history stay aligned with GitHub releases.
+
+## Versioning
+
+Release metadata lives in `releases.json`.
+
+```bash
+npm run generate:changelog
+```
+
+This regenerates `CHANGELOG.md` from the same data used by the landing page. Update `releases.json` first, then regenerate the changelog before tagging a release.
+
 ## Privacy And Permissions
 
 82-0 Helper requests only:

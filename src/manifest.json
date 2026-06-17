@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "82-0 Helper",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Classic-mode draft advice for 82-0.com.",
   "permissions": ["storage"],
   "host_permissions": ["https://www.82-0.com/*"],

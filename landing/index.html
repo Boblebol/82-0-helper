@@ -23,13 +23,16 @@
         <span>Helper</span>
       </a>
       <nav class="site-nav" aria-label="Navigation principale">
+        <a href="#game">82-0</a>
         <a href="#features">Fonctions</a>
         <a href="#install">Installer</a>
+        <a href="#versions">Versions</a>
         <a href="https://github.com/Boblebol/82-0-helper" rel="noreferrer">GitHub</a>
       </nav>
       <a
         class="nav-download"
-        href="https://github.com/Boblebol/82-0-helper/releases/download/v0.1.1/82-0-classic-assistant-v0.1.1.zip"
+        href="https://github.com/Boblebol/82-0-helper/releases/latest"
+        data-release-download
       >
         Télécharger
       </a>
@@ -86,7 +89,8 @@
           <div class="hero-actions">
             <a
               class="button primary"
-              href="https://github.com/Boblebol/82-0-helper/releases/download/v0.1.1/82-0-classic-assistant-v0.1.1.zip"
+              href="https://github.com/Boblebol/82-0-helper/releases/latest"
+              data-release-download
             >
               Télécharger l'extension
             </a>
@@ -108,6 +112,22 @@
         <div>
           <strong>Aide au reroll</strong>
           <span>proba de trouver mieux avec tes skips restants.</span>
+        </div>
+      </section>
+
+      <section class="game-section" id="game">
+        <div>
+          <p class="eyebrow">But du jeu</p>
+          <h2>82-0 te met au défi de construire un roster NBA historique invaincu.</h2>
+        </div>
+        <div class="game-copy">
+          <p>
+            À chaque round, le site te donne une équipe et une décennie. Ton objectif est de choisir le joueur qui renforce le mieux ton cinq majeur pour viser une saison parfaite.
+          </p>
+          <p>
+            82-0 Helper ne joue pas à ta place: il lit le roll visible, compare les options et t'aide à décider si le pick ou le reroll vaut le coup.
+          </p>
+          <a class="button secondary" href="https://www.82-0.com/" rel="noreferrer">Jouer sur 82-0.com</a>
         </div>
       </section>
 
@@ -144,7 +164,8 @@
           </p>
           <a
             class="button primary"
-            href="https://github.com/Boblebol/82-0-helper/releases/download/v0.1.1/82-0-classic-assistant-v0.1.1.zip"
+            href="https://github.com/Boblebol/82-0-helper/releases/latest"
+            data-release-download
           >
             Télécharger l'extension
           </a>
@@ -174,6 +195,19 @@
         </ol>
       </section>
 
+      <section class="release-section" id="versions" aria-labelledby="versions-title">
+        <div class="section-heading">
+          <p class="eyebrow">Dernières versions</p>
+          <h2 id="versions-title">Changelog synchronisé avec GitHub.</h2>
+          <p>
+            La landing et le changelog GitHub utilisent le même fichier de versioning. Dernière version:
+            <strong data-release-version>v0.2.0</strong>, publiée le
+            <strong data-release-date>2026-06-17</strong>.
+          </p>
+        </div>
+        <div class="release-list" id="release-list"></div>
+      </section>
+
       <section class="closing-section" aria-labelledby="closing-title">
         <div>
           <p class="eyebrow">Open source</p>
@@ -183,7 +217,7 @@
           </p>
         </div>
         <div class="closing-actions">
-          <a class="button primary" href="https://github.com/Boblebol/82-0-helper/releases/latest">
+          <a class="button primary" href="https://github.com/Boblebol/82-0-helper/releases/latest" data-release-url>
             Voir la dernière release
           </a>
           <a class="button secondary" href="https://github.com/Boblebol/82-0-helper" rel="noreferrer">
@@ -192,5 +226,20 @@
         </div>
       </section>
     </main>
+
+    <footer class="site-footer">
+      <div>
+        <p class="eyebrow">Créé par Alexandre Enouf</p>
+        <h2>Lead Dev chez Partoo, freelance web à côté.</h2>
+        <p>
+          Je travaille sur l'architecture distribuée et la synchronisation de données à grande échelle, et je crée aussi des sites vitrines premium pour professionnels.
+        </p>
+      </div>
+      <a class="footer-link" href="https://alexandre-enouf.fr" rel="noreferrer">
+        alexandre-enouf.fr
+      </a>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

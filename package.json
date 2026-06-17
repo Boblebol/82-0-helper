@@ -1,6 +1,6 @@
 {
   "name": "82-0-helper",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Chromium extension that adds Classic-mode draft advice to 82-0.com.",
   "private": true,
   "license": "MIT",
@@ -28,6 +28,7 @@
     "build": "vite build",
     "build:landing": "vite build --config landing/vite.config.ts",
     "dev:landing": "vite --config landing/vite.config.ts --host 127.0.0.1",
+    "generate:changelog": "node scripts/generate-changelog.mjs",
     "preview:landing": "vite preview --config landing/vite.config.ts --host 127.0.0.1",
     "test": "vitest run",
     "test:watch": "vitest",
