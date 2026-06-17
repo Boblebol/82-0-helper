@@ -27,6 +27,7 @@ describe("landing page", () => {
     const html = readFileSync("landing/index.html", "utf8");
     const script = readFileSync("landing/src/main.ts", "utf8");
     const css = readFileSync("landing/src/styles.css", "utf8");
+    const headerRule = css.match(/\.site-header\s*{[^}]+}/)?.[0] ?? "";
 
     expect(html).toContain("82-0 Helper");
     expect(html).toContain("Télécharger l'extension");
@@ -38,8 +39,10 @@ describe("landing page", () => {
     expect(html).toContain("Mode développeur");
     expect(html).toContain("Meilleur pick");
     expect(html).toContain("Dernières versions");
-    expect(html).toContain("Créé par Alexandre Enouf");
-    expect(html).toContain("Lead Dev chez Partoo");
+    expect(html).toContain("Fait par Alexandre Enouf");
+    expect(html).not.toContain("Lead Dev chez Partoo");
+    expect(html).not.toContain("architecture distribuée");
+    expect(html).toContain("https://github.com/Boblebol");
     expect(html).toContain("https://alexandre-enouf.fr");
     expect(html).toContain('data-release-download');
     expect(html).toContain('id="release-list"');
@@ -48,6 +51,10 @@ describe("landing page", () => {
     expect(script).toContain("release-list");
     expect(css).toContain("--page: #f7f8fa");
     expect(css).toContain("--accent: #ff5a00");
+    expect(headerRule).toContain("position: sticky");
+    expect(headerRule).toContain("top: 0");
+    expect(headerRule).toContain("left: 0");
+    expect(headerRule).toContain("right: 0");
     expect(css).toContain(".assistant-preview");
     expect(css).toContain(".game-section");
     expect(css).toContain(".release-section");

@@ -45,11 +45,14 @@ a {
 .site-header {
   position: sticky;
   top: 0;
+  right: 0;
+  left: 0;
   z-index: 20;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
+  width: 100%;
   min-height: 64px;
   padding: 12px 32px;
   border-bottom: 1px solid rgba(17, 20, 24, 0.08);
@@ -430,8 +433,7 @@ a {
 .section h2,
 .game-section h2,
 .install-section h2,
-.closing-section h2,
-.site-footer h2 {
+.closing-section h2 {
   margin: 0;
   color: var(--text);
   font-size: 42px;
@@ -497,8 +499,7 @@ a {
 .feature-grid p,
 .release-section p,
 .install-copy p,
-.closing-section p,
-.site-footer p {
+.closing-section p {
   color: var(--muted);
   font-size: 16px;
   line-height: 1.58;
@@ -660,24 +661,31 @@ code {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 32px;
+  gap: 18px;
   margin-top: 96px;
-  padding-top: 42px;
-  padding-bottom: 42px;
+  padding-top: 28px;
+  padding-bottom: 28px;
   border-top: 1px solid var(--line);
 }
 
-.site-footer > div {
-  max-width: 700px;
+.footer-credit {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 850;
 }
 
-.site-footer h2 {
-  font-size: 28px;
+.footer-links {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .footer-link {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   min-height: 44px;
   padding: 0 16px;
   border: 1px solid var(--line);
@@ -791,8 +799,8 @@ code {
     align-items: flex-start;
     flex-direction: column;
     margin-top: 72px;
-    padding-top: 34px;
-    padding-bottom: 34px;
+    padding-top: 28px;
+    padding-bottom: 28px;
   }
 }
 
@@ -900,12 +908,12 @@ code {
     max-width: 100%;
   }
 
-  .site-footer h2 {
-    font-size: 24px;
+  .footer-links,
+  .footer-link {
+    width: 100%;
   }
 
   .footer-link {
-    width: 100%;
     justify-content: center;
   }
 }
