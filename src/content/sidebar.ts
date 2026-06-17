@@ -24,6 +24,34 @@ export interface SidebarViewModel {
 const HOST_ID = "assistant-82-0-host";
 const STYLE_ID = "assistant-82-0-sidebar-style";
 const POSITION_ORDER: Position[] = ["PG", "SG", "SF", "PF", "C"];
+const HELP_TEXT = {
+  bestPick: "Le meilleur joueur à prendre maintenant selon le gain immédiat et la projection du roster.",
+  projection: "Projection réaliste après ce choix, en complétant l'équipe avec des picks probables.",
+  ceiling: "Meilleur scénario estimé si les prochains choix se passent très bien.",
+  alternatives: "Les autres joueurs visibles classés avec la même logique de projection.",
+  skipAdvice: "Conseil qui tient compte du pick recommandé, des rerolls disponibles et du fait que chaque reroll n'est utilisable qu'une fois.",
+  rerollOdds: "Probabilité de tomber sur un tirage contenant un meilleur pick que le choix recommandé actuel.",
+  roster: "Joueurs déjà placés dans ton cinq. Ils sont exclus des calculs de reroll via leur identité de joueur.",
+  gaps: "Catégories statistiques les plus faibles du roster actuel.",
+  manual: "Corrige manuellement l'équipe, la décennie ou le tour si la page a été mal détectée."
+} as const;
+const SKIP_LABELS: Record<SkipAdvice["kind"], string> = {
+  keep: "Garder",
+  "skip-team": "Reroll équipe",
+  "skip-decade": "Reroll décennie",
+  "skip-only-if-chasing-82-0": "Reroll si 82-0"
+};
+const SKIP_REASON_TRANSLATIONS: Record<string, string> = {
+  "The current roll is strong relative to reroll options.": "Le tirage actuel est solide par rapport aux options de reroll.",
+  "Rerolling the team has a better expected candidate distribution.": "Changer d'équipe offre une meilleure distribution de candidats.",
+  "Rerolling the decade better matches the current roster gaps.": "Changer de décennie correspond mieux aux manques actuels.",
+  "This is fine for expected wins but lowers the 82-0 ceiling path.": "Ce choix reste correct, mais il limite la trajectoire vers 82-0.",
+  "Wait for more player data before deciding whether to skip.": "Attends que la liste des joueurs soit détectée avant de décider.",
+  "Loading player data...": "Chargement des joueurs...",
+  "Waiting for player data before evaluating this roll.": "Chargement des joueurs avant l'évaluation du tirage.",
+  "Waiting for a detected team and decade.": "En attente d'une équipe et d'une décennie détectées.",
+  "players data unavailable": "Données joueurs indisponibles."
+};
 
 export function ensureSidebarHost(): ShadowRoot {
   const documentElement = document.documentElement;
@@ -53,18 +81,18 @@ export function renderSidebar(root: Element | ShadowRoot, viewModel: SidebarView
   const wasOpen = container.querySelector(".assistant-shell")?.classList.contains("is-open") ?? false;
   const wasEditing = container.querySelector(".assistant-shell")?.classList.contains("is-editing") ?? false;
   const shellClass = "assistant-shell";
-  const stateLabel = `${viewModel.state.mode} • ${viewModel.state.confidence} confidence`;
+  const stateLabel = `${modeLabel(viewModel.state.mode)} • ${confidenceLabel(viewModel.state.confidence)}`;
   const headerLine = [
-    viewModel.state.team ?? "Unknown team",
-    viewModel.state.decade ?? "Unknown decade"
+    viewModel.state.team ?? "Équipe inconnue",
+    viewModel.state.decade ?? "Décennie inconnue"
   ].join(" ");
-  const roundLabel = viewModel.state.round == null ? "Round ?" : `Round ${viewModel.state.round}`;
+  const roundLabel = viewModel.state.round == null ? "Tour ?" : `Tour ${viewModel.state.round}`;
   const ariaExpanded = wasOpen ? "true" : "false";
 
   container.innerHTML = `
     <section class="${shellClass}${wasOpen ? " is-open" : ""}${wasEditing ? " is-editing" : ""}">
-      <button class="assistant-toggle" type="button" data-action="toggle" aria-expanded="${ariaExpanded}">82 Assist</button>
-      <div class="assistant-panel" role="region" aria-label="Assistant sidebar">
+      <button class="assistant-toggle" type="button" data-action="toggle" aria-expanded="${ariaExpanded}">Aide 82-0</button>
+      <div class="assistant-panel" role="region" aria-label="Assistant 82-0">
         <header class="assistant-header">
           <div>
             <p class="assistant-eyebrow">${escapeHtml(stateLabel)}</p>
@@ -83,9 +111,9 @@ export function renderSidebar(root: Element | ShadowRoot, viewModel: SidebarView
         ${manualEditPanel(viewModel.state, wasEditing)}
 
         <footer class="assistant-actions">
-          <button class="assistant-button" type="button" data-action="scan-page">Scan page</button>
-          <button class="assistant-button" type="button" data-action="edit">Edit roster</button>
-          <button class="assistant-button assistant-button--ghost" type="button" data-action="reset-manual">Reset manual</button>
+          <button class="assistant-button" type="button" data-action="scan-page">Analyser</button>
+          <button class="assistant-button" type="button" data-action="edit">Corriger</button>
+          <button class="assistant-button assistant-button--ghost" type="button" data-action="reset-manual">Réinitialiser</button>
         </footer>
       </div>
     </section>
@@ -104,6 +132,38 @@ function ensureSidebarContainer(root: Element | ShadowRoot): HTMLElement {
   container.dataset.assistantSidebarRoot = "true";
   root.appendChild(container);
   return container;
+}
+
+function modeLabel(mode: GameState["mode"]): string {
+  if (mode === "classic") {
+    return "Classic";
+  }
+  if (mode === "hoopiq") {
+    return "HoopIQ";
+  }
+  return "Mode inconnu";
+}
+
+function confidenceLabel(confidence: GameState["confidence"]): string {
+  return confidence === "high" ? "confiance haute" : "confiance faible";
+}
+
+function cardTitle(label: string, help: string): string {
+  return `
+    <div class="assistant-card-heading">
+      <p class="assistant-card-title">${escapeHtml(label)}</p>
+      ${helpButton(help)}
+    </div>
+  `;
+}
+
+function helpButton(help: string): string {
+  const escapedHelp = escapeHtml(help);
+  return `<button class="assistant-help" type="button" aria-label="${escapedHelp}" title="${escapedHelp}" data-tooltip="${escapedHelp}">?</button>`;
+}
+
+function translateMessage(message: string): string {
+  return SKIP_REASON_TRANSLATIONS[message] ?? message;
 }
 
 function wireEvents(root: Element | ShadowRoot, viewModel: SidebarViewModel): void {
@@ -163,14 +223,14 @@ function manualEditPanel(state: GameState, isEditing: boolean): string {
 
   return `
     <section class="assistant-card" data-assistant-edit-panel ${isEditing ? "" : "hidden"}>
-      <p class="assistant-card-title">Manual correction</p>
-      <label class="assistant-field">Team <input name="team" maxlength="3" value="${teamValue}" /></label>
-      <label class="assistant-field">Decade <select name="decade">
-        <option value=""${decadeValue === "" ? " selected" : ""}>Unknown</option>
+      ${cardTitle("Correction manuelle", HELP_TEXT.manual)}
+      <label class="assistant-field">Équipe <input name="team" maxlength="3" value="${teamValue}" /></label>
+      <label class="assistant-field">Décennie <select name="decade">
+        <option value=""${decadeValue === "" ? " selected" : ""}>Inconnue</option>
         ${ACTIVE_DECADES.map((decade) => `<option value="${decade}"${decadeValue === decade ? " selected" : ""}>${decade}</option>`).join("")}
       </select></label>
-      <label class="assistant-field">Round <input name="round" type="number" min="1" max="5" value="${roundValue}" /></label>
-      <button class="assistant-button assistant-button--compact" type="button" data-action="save-manual">Save</button>
+      <label class="assistant-field">Tour <input name="round" type="number" min="1" max="5" value="${roundValue}" /></label>
+      <button class="assistant-button assistant-button--compact" type="button" data-action="save-manual">Enregistrer</button>
     </section>
   `;
 }
@@ -248,9 +308,9 @@ function parseDecade(value: string): Decade | null {
 function errorCard(error: string): string {
   return `
     <section class="assistant-card assistant-card--error" aria-label="Sidebar error">
-      <p class="assistant-card-title">Data unavailable</p>
-      <p class="assistant-copy">${escapeHtml(error)}</p>
-      <button class="assistant-button assistant-button--compact" type="button" data-action="retry">Retry</button>
+      <p class="assistant-card-title">Données indisponibles</p>
+      <p class="assistant-copy">${escapeHtml(translateMessage(error))}</p>
+      <button class="assistant-button assistant-button--compact" type="button" data-action="retry">Réessayer</button>
     </section>
   `;
 }
@@ -258,8 +318,8 @@ function errorCard(error: string): string {
 function loadingCard(message: string): string {
   return `
     <section class="assistant-card assistant-card--loading" aria-label="Sidebar loading">
-      <p class="assistant-card-title">Loading</p>
-      <p class="assistant-copy">${escapeHtml(message)}</p>
+      <p class="assistant-card-title">Chargement</p>
+      <p class="assistant-copy">${escapeHtml(translateMessage(message))}</p>
     </section>
   `;
 }
@@ -268,15 +328,15 @@ function bestPickCard(recommendation?: CandidateRecommendation): string {
   if (!recommendation) {
     return `
       <section class="assistant-card">
-        <p class="assistant-card-title">Best pick</p>
-        <p class="assistant-copy">No recommendation available for the current roll.</p>
+        ${cardTitle("Meilleur choix", HELP_TEXT.bestPick)}
+        <p class="assistant-copy">Aucune recommandation pour le tirage actuel.</p>
       </section>
     `;
   }
 
   return `
     <section class="assistant-card assistant-card--highlight" aria-label="Best recommendation">
-      <p class="assistant-card-title">Best pick</p>
+      ${cardTitle("Meilleur choix", HELP_TEXT.bestPick)}
       <div class="assistant-best">
         <div>
           <div class="assistant-player">${escapeHtml(recommendation.player.name)}</div>
@@ -285,10 +345,10 @@ function bestPickCard(recommendation?: CandidateRecommendation): string {
         <div class="assistant-position">${escapeHtml(recommendation.position)}</div>
       </div>
       <div class="assistant-stats">
-        <div>Expected record ${formatWins(recommendation.expectedWins)}</div>
-        <div>Ceiling record ${formatWins(recommendation.ceilingWins)}</div>
-        <div>Expected ${formatDelta(recommendation.deltaExpectedWins)}</div>
-        <div>Ceiling ${formatDelta(recommendation.deltaCeilingWins)}</div>
+        <div>Projection réaliste ${formatWins(recommendation.expectedWins)} ${helpButton(HELP_TEXT.projection)}</div>
+        <div>Plafond ${formatWins(recommendation.ceilingWins)} ${helpButton(HELP_TEXT.ceiling)}</div>
+        <div>Gain réaliste ${formatDelta(recommendation.deltaExpectedWins)} ${helpButton(HELP_TEXT.projection)}</div>
+        <div>Gain plafond ${formatDelta(recommendation.deltaCeilingWins)} ${helpButton(HELP_TEXT.ceiling)}</div>
       </div>
     </section>
   `;
@@ -298,8 +358,8 @@ function recommendationsTable(recommendations: CandidateRecommendation[]): strin
   if (recommendations.length === 0) {
     return `
       <section class="assistant-card">
-        <p class="assistant-card-title">Top picks</p>
-        <p class="assistant-copy">No alternative picks are available.</p>
+        ${cardTitle("Alternatives", HELP_TEXT.alternatives)}
+        <p class="assistant-copy">Aucun autre pick disponible.</p>
       </section>
     `;
   }
@@ -320,16 +380,16 @@ function recommendationsTable(recommendations: CandidateRecommendation[]): strin
 
   return `
     <section class="assistant-card">
-      <p class="assistant-card-title">Top picks</p>
+      ${cardTitle("Alternatives", HELP_TEXT.alternatives)}
       <div class="assistant-table-wrap">
         <table class="assistant-table">
           <thead>
             <tr>
-              <th scope="col">Player</th>
+              <th scope="col">Joueur</th>
               <th scope="col">Pos</th>
-              <th scope="col">Expected</th>
-              <th scope="col">Ceiling</th>
-              <th scope="col">Delta</th>
+              <th scope="col">Réaliste</th>
+              <th scope="col">Plafond</th>
+              <th scope="col">Gain</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
@@ -340,14 +400,14 @@ function recommendationsTable(recommendations: CandidateRecommendation[]): strin
 }
 
 function skipAdviceCard(skipAdvice: SkipAdvice, rerollOdds: RerollBetterOdds | null, recommendation: CandidateRecommendation | undefined): string {
-  const label = skipAdvice.kind.replace(/-/g, " ");
+  const label = SKIP_LABELS[skipAdvice.kind];
   const odds = rerollOdds && recommendation ? rerollOddsList(rerollOdds, recommendation.player.name) : "";
 
   return `
     <section class="assistant-card">
-      <p class="assistant-card-title">Skip advice</p>
-      <div class="assistant-pill">${escapeHtml(label)}</div>
-      <p class="assistant-copy">${escapeHtml(skipAdvice.reason)}</p>
+      ${cardTitle("Conseil reroll", HELP_TEXT.skipAdvice)}
+      <div class="assistant-pill assistant-pill--${escapeHtml(skipAdvice.kind)}">${escapeHtml(label)}</div>
+      <p class="assistant-copy">${escapeHtml(translateMessage(skipAdvice.reason))}</p>
       ${odds}
     </section>
   `;
@@ -356,8 +416,9 @@ function skipAdviceCard(skipAdvice: SkipAdvice, rerollOdds: RerollBetterOdds | n
 function rerollOddsList(rerollOdds: RerollBetterOdds, baselinePlayerName: string): string {
   return `
     <div class="assistant-reroll-odds" aria-label="reroll odds">
-      ${rerollOddsRow("Team reroll", rerollOdds.team, baselinePlayerName)}
-      ${rerollOddsRow("Era reroll", rerollOdds.decade, baselinePlayerName)}
+      <div class="assistant-reroll-title">Probabilités ${helpButton(HELP_TEXT.rerollOdds)}</div>
+      ${rerollOddsRow("Reroll équipe", rerollOdds.team, baselinePlayerName)}
+      ${rerollOddsRow("Reroll décennie", rerollOdds.decade, baselinePlayerName)}
     </div>
   `;
 }
@@ -367,7 +428,7 @@ function rerollOddsRow(label: string, rate: RerollHitRate, baselinePlayerName: s
     return `
       <p>
         <span>${escapeHtml(label)}</span>
-        <strong>used</strong>
+        <strong>utilisé</strong>
       </p>
     `;
   }
@@ -376,7 +437,7 @@ function rerollOddsRow(label: string, rate: RerollHitRate, baselinePlayerName: s
     return `
       <p>
         <span>${escapeHtml(label)}</span>
-        <strong>n/a</strong>
+        <strong>n/d</strong>
       </p>
     `;
   }
@@ -384,8 +445,8 @@ function rerollOddsRow(label: string, rate: RerollHitRate, baselinePlayerName: s
   return `
     <p>
       <span>${escapeHtml(label)}</span>
-      <strong>${formatPercent(rate.probability)} better than ${escapeHtml(baselinePlayerName)}</strong>
-      <em>${rate.betterRolls}/${rate.totalRolls} rolls</em>
+      <strong>${formatPercent(rate.probability)} meilleur que ${escapeHtml(baselinePlayerName)}</strong>
+      <em>${rate.betterRolls}/${rate.totalRolls} tirages</em>
     </p>
   `;
 }
@@ -396,14 +457,14 @@ function rosterCard(roster: GameState["roster"]): string {
     return `
       <li>
         <span class="assistant-roster-pos">${escapeHtml(position)}</span>
-        <span class="assistant-roster-name">${escapeHtml(player?.name ?? "Open")}</span>
+        <span class="assistant-roster-name">${escapeHtml(player?.name ?? "Libre")}</span>
       </li>
     `;
   }).join("");
 
   return `
     <section class="assistant-card">
-      <p class="assistant-card-title">Roster</p>
+      ${cardTitle("Équipe", HELP_TEXT.roster)}
       <ul class="assistant-roster">${rows}</ul>
     </section>
   `;
@@ -412,11 +473,11 @@ function rosterCard(roster: GameState["roster"]): string {
 function gapsCard(gaps: string[]): string {
   const items = gaps.length > 0
     ? gaps.map((gap) => `<li>${escapeHtml(gap)}</li>`).join("")
-    : "<li>None</li>";
+    : "<li>Aucun</li>";
 
   return `
     <section class="assistant-card">
-      <p class="assistant-card-title">Gaps</p>
+      ${cardTitle("Manques", HELP_TEXT.gaps)}
       <ul class="assistant-gaps">${items}</ul>
     </section>
   `;
@@ -432,7 +493,7 @@ function formatDelta(value: number): string {
 }
 
 function formatPercent(value: number): string {
-  return `${Math.round(value * 100)}%`;
+  return `${Math.round(value * 100)} %`;
 }
 
 function escapeHtml(value: string): string {

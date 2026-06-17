@@ -90,7 +90,7 @@ describe("content entrypoint", () => {
 
     const host = document.getElementById("assistant-82-0-host");
     expect(fetchPlayers).toHaveBeenCalledTimes(1);
-    expect(host?.shadowRoot?.textContent).toContain("Loading player data");
+    expect(host?.shadowRoot?.textContent).toContain("Chargement des joueurs");
 
     resolveFetch({
       players: [kobe],
@@ -136,7 +136,7 @@ describe("content entrypoint", () => {
     });
 
     const host = document.getElementById("assistant-82-0-host");
-    expect(host?.shadowRoot?.textContent).toContain("players data unavailable");
+    expect(host?.shadowRoot?.textContent).toContain("Données joueurs indisponibles.");
   });
 
   it("keeps the latest overlapping start render and ignores stale observer callbacks", async () => {
@@ -325,7 +325,7 @@ describe("content entrypoint", () => {
     });
 
     const host = document.getElementById("assistant-82-0-host");
-    expect(host?.shadowRoot?.textContent).toContain("skip team");
+    expect(host?.shadowRoot?.textContent).toContain("Reroll équipe");
   });
 
   it("does not render skip-team advice when the team reroll is already consumed", async () => {
@@ -353,8 +353,9 @@ describe("content entrypoint", () => {
     });
 
     const host = document.getElementById("assistant-82-0-host");
-    expect(host?.shadowRoot?.textContent).not.toContain("skip team");
-    expect(host?.shadowRoot?.textContent).toContain("keep");
+    expect(host?.shadowRoot?.textContent).toContain("Garder");
+    expect(host?.shadowRoot?.textContent).toContain("Reroll équipe");
+    expect(host?.shadowRoot?.textContent).toContain("utilisé");
   });
 
   it("renders better-pick reroll odds for available rerolls only", async () => {
@@ -382,11 +383,11 @@ describe("content entrypoint", () => {
     });
 
     const host = document.getElementById("assistant-82-0-host");
-    expect(host?.shadowRoot?.textContent).toContain("Team reroll");
-    expect(host?.shadowRoot?.textContent).toContain("100% better than Weak Wing");
-    expect(host?.shadowRoot?.textContent).toContain("1/1 rolls");
-    expect(host?.shadowRoot?.textContent).toContain("Era reroll");
-    expect(host?.shadowRoot?.textContent).toContain("used");
+    expect(host?.shadowRoot?.textContent).toContain("Reroll équipe");
+    expect(host?.shadowRoot?.textContent).toContain("100 % meilleur que Weak Wing");
+    expect(host?.shadowRoot?.textContent).toContain("1/1 tirages");
+    expect(host?.shadowRoot?.textContent).toContain("Reroll décennie");
+    expect(host?.shadowRoot?.textContent).toContain("utilisé");
   });
 
   it("saves partial manual corrections without clearing detected state", async () => {
@@ -459,7 +460,7 @@ describe("content entrypoint", () => {
       round: 4
     });
     expect(fetchPlayers).toHaveBeenCalledTimes(1);
-    expect(host?.shadowRoot?.textContent).toContain("Round 4");
+    expect(host?.shadowRoot?.textContent).toContain("Tour 4");
   });
 
   it("cancels a stale debounced mutation rerender when a newer start begins", async () => {

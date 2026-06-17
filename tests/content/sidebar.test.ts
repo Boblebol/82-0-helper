@@ -64,12 +64,14 @@ describe("sidebar", () => {
 
     expect(root.textContent).toContain("LAL 2000s");
     expect(root.textContent).toContain("Kobe Bryant");
-    expect(root.textContent).toContain("Expected +28");
-    expect(root.textContent).toContain("Ceiling +32");
-    expect(root.textContent).toContain("Skip advice");
-    expect(root.textContent).toContain("keep");
-    expect(root.textContent).toContain("The current roll is strong relative to reroll options.");
+    expect(root.textContent).toContain("Gain réaliste +28");
+    expect(root.textContent).toContain("Gain plafond +32");
+    expect(root.textContent).toContain("Conseil reroll");
+    expect(root.textContent).toContain("Garder");
+    expect(root.textContent).toContain("Le tirage actuel est solide par rapport aux options de reroll.");
     expect(root.textContent).toContain("AST");
+    expect(root.querySelector("[data-tooltip*='meilleur joueur']")).not.toBeNull();
+    expect(root.querySelectorAll("[data-tooltip]").length).toBeGreaterThanOrEqual(6);
     expect(root.querySelector("button[data-action='edit']")).not.toBeNull();
   });
 
@@ -89,7 +91,7 @@ describe("sidebar", () => {
       onManualSave: vi.fn()
     });
 
-    expect(root.textContent).toContain("players data unavailable");
+    expect(root.textContent).toContain("Données joueurs indisponibles.");
     expect(root.querySelector("button[data-action='retry']")).not.toBeNull();
   });
 

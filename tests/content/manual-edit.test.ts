@@ -45,9 +45,11 @@ describe("manual edit UI", () => {
 
     root.querySelector<HTMLButtonElement>("[data-action='edit']")?.click();
 
+    expect(root.textContent).toContain("Correction manuelle");
     expect(root.querySelector<HTMLInputElement>("input[name='team']")?.value).toBe("LAL");
     expect(root.querySelector<HTMLSelectElement>("select[name='decade']")?.value).toBe("2000s");
     expect(root.querySelector<HTMLInputElement>("input[name='round']")?.value).toBe("2");
+    expect(root.querySelector<HTMLButtonElement>("[data-action='save-manual']")?.textContent).toContain("Enregistrer");
   });
 
   it("toggles manual controls when edit is clicked", () => {
