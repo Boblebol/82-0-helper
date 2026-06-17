@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "82-0 Classic Assistant",
+  "name": "82-0 Helper",
   "version": "0.1.1",
   "description": "Classic-mode draft advice for 82-0.com.",
   "permissions": ["storage"],

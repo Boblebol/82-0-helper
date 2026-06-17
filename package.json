@@ -1,8 +1,29 @@
 {
-  "name": "82-0-classic-assistant",
+  "name": "82-0-helper",
   "version": "0.1.1",
+  "description": "Chromium extension that adds Classic-mode draft advice to 82-0.com.",
   "private": true,
+  "license": "MIT",
+  "author": "Boblebol",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Boblebol/82-0-helper.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Boblebol/82-0-helper/issues"
+  },
+  "homepage": "https://github.com/Boblebol/82-0-helper#readme",
+  "keywords": [
+    "82-0",
+    "basketball",
+    "browser-extension",
+    "chrome-extension",
+    "nba"
+  ],
+  "engines": {
+    "node": ">=18.18"
+  },
   "scripts": {
     "build": "vite build",
     "test": "vitest run",

@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest an improvement for the extension.
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: What should the extension help with?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior you would like.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any simpler or different approaches?
+  - type: textarea
+    id: context
+    attributes:
+      label: Extra context
+      description: Game mode, screenshots, examples, or scoring notes.

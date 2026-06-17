@@ -1,4 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build and release artifacts
+dist/
+release/
+
+# Local agent and workspace state
 .superpowers/
 .worktrees/
-dist/
-node_modules/
+AGENTS.md
+
+# Logs and coverage
+*.log
+coverage/
+
+# TypeScript and Vite caches
+*.tsbuildinfo
+.vite/
+
+# OS files
+.DS_Store
