@@ -142,9 +142,9 @@
 }
 
 .assistant-card-heading {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18px;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
   margin-bottom: 8px;
 }
@@ -205,7 +205,11 @@
   margin: 0;
 }
 
-.assistant-stats div {
+.assistant-stat {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18px;
+  gap: 6px;
+  align-items: start;
   padding: 8px;
   border-radius: 8px;
   background: var(--assistant-card-muted);
@@ -215,6 +219,10 @@
   font-size: 13px;
   font-weight: 800;
   color: var(--assistant-text);
+}
+
+.assistant-stat > span {
+  min-width: 0;
 }
 
 .assistant-pill {
@@ -250,7 +258,6 @@
 }
 
 .assistant-help {
-  position: relative;
   display: inline-grid;
   place-items: center;
   flex: 0 0 auto;
@@ -269,40 +276,36 @@
   cursor: help;
 }
 
-.assistant-help::after {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  z-index: 3;
-  width: 236px;
-  max-width: calc(100vw - 48px);
+.assistant-help-tooltip {
+  display: none;
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: 100%;
+  margin-top: 2px;
   padding: 8px 9px;
   border: 1px solid #cfd6df;
   border-radius: 8px;
-  background: #111827;
-  color: #ffffff;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.22);
-  content: attr(data-tooltip);
+  background: #f8fafc;
+  color: #111827;
   font-size: 12px;
   font-weight: 600;
   line-height: 1.35;
-  opacity: 0;
-  pointer-events: none;
   text-align: left;
   text-transform: none;
-  transform: translateY(-3px);
-  transition: opacity 120ms ease, transform 120ms ease;
+  box-shadow: inset 3px 0 0 var(--assistant-accent);
 }
 
-.assistant-help:hover::after,
-.assistant-help:focus-visible::after {
-  opacity: 1;
-  transform: translateY(0);
+.assistant-card-heading:hover .assistant-help-tooltip,
+.assistant-card-heading:focus-within .assistant-help-tooltip,
+.assistant-stat:hover .assistant-help-tooltip,
+.assistant-stat:focus-within .assistant-help-tooltip,
+.assistant-reroll-title:hover .assistant-help-tooltip,
+.assistant-reroll-title:focus-within .assistant-help-tooltip {
+  display: block;
 }
 
 .assistant-stats .assistant-help {
-  margin-left: 4px;
-  vertical-align: middle;
+  justify-self: end;
 }
 
 .assistant-reroll-odds {
@@ -314,7 +317,8 @@
 }
 
 .assistant-reroll-title {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, auto) 18px;
   align-items: center;
   gap: 6px;
   color: var(--assistant-text);

@@ -11,4 +11,13 @@ describe("sidebar theme", () => {
     expect(css).toContain("background: var(--assistant-panel)");
     expect(css).toContain("color: var(--assistant-text)");
   });
+
+  it("keeps help hover content inside the card flow", () => {
+    const css = readFileSync("src/styles/sidebar.css", "utf8");
+
+    expect(css).not.toContain(".assistant-help::after");
+    expect(css).toContain(".assistant-help-tooltip");
+    expect(css).toContain("grid-column: 1 / -1");
+    expect(css).toContain("max-width: 100%");
+  });
 });

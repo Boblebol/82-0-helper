@@ -154,6 +154,7 @@ function cardTitle(label: string, help: string): string {
     <div class="assistant-card-heading">
       <p class="assistant-card-title">${escapeHtml(label)}</p>
       ${helpButton(help)}
+      ${helpTooltip(help)}
     </div>
   `;
 }
@@ -161,6 +162,10 @@ function cardTitle(label: string, help: string): string {
 function helpButton(help: string): string {
   const escapedHelp = escapeHtml(help);
   return `<button class="assistant-help" type="button" aria-label="${escapedHelp}" title="${escapedHelp}" data-tooltip="${escapedHelp}">?</button>`;
+}
+
+function helpTooltip(help: string): string {
+  return `<span class="assistant-help-tooltip" role="tooltip">${escapeHtml(help)}</span>`;
 }
 
 function translateMessage(message: string): string {
@@ -346,13 +351,23 @@ function bestPickCard(recommendation?: CandidateRecommendation): string {
         <div class="assistant-position">${escapeHtml(recommendation.position)}</div>
       </div>
       <div class="assistant-stats">
-        <div>Impact pick ${formatDelta(pickImpactWins(recommendation))} ${helpButton(HELP_TEXT.pickImpact)}</div>
-        <div>Projection réaliste ${formatWins(recommendation.expectedWins)} ${helpButton(HELP_TEXT.projection)}</div>
-        <div>Plafond ${formatWins(recommendation.ceilingWins)} ${helpButton(HELP_TEXT.ceiling)}</div>
-        <div>Gain réaliste ${formatDelta(recommendation.deltaExpectedWins)} ${helpButton(HELP_TEXT.projection)}</div>
-        <div>Gain plafond ${formatDelta(recommendation.deltaCeilingWins)} ${helpButton(HELP_TEXT.ceiling)}</div>
+        ${statItem(`Impact pick ${formatDelta(pickImpactWins(recommendation))}`, HELP_TEXT.pickImpact)}
+        ${statItem(`Projection réaliste ${formatWins(recommendation.expectedWins)}`, HELP_TEXT.projection)}
+        ${statItem(`Plafond ${formatWins(recommendation.ceilingWins)}`, HELP_TEXT.ceiling)}
+        ${statItem(`Gain réaliste ${formatDelta(recommendation.deltaExpectedWins)}`, HELP_TEXT.projection)}
+        ${statItem(`Gain plafond ${formatDelta(recommendation.deltaCeilingWins)}`, HELP_TEXT.ceiling)}
       </div>
     </section>
+  `;
+}
+
+function statItem(label: string, help: string): string {
+  return `
+    <div class="assistant-stat">
+      <span>${escapeHtml(label)}</span>
+      ${helpButton(help)}
+      ${helpTooltip(help)}
+    </div>
   `;
 }
 
@@ -420,7 +435,11 @@ function skipAdviceCard(skipAdvice: SkipAdvice, rerollOdds: RerollBetterOdds | n
 function rerollOddsList(rerollOdds: RerollBetterOdds, baselinePlayerName: string): string {
   return `
     <div class="assistant-reroll-odds" aria-label="reroll odds">
-      <div class="assistant-reroll-title">Probabilités ${helpButton(HELP_TEXT.rerollOdds)}</div>
+      <div class="assistant-reroll-title">
+        <span>Probabilités</span>
+        ${helpButton(HELP_TEXT.rerollOdds)}
+        ${helpTooltip(HELP_TEXT.rerollOdds)}
+      </div>
       ${rerollOddsRow("Reroll équipe", rerollOdds.team, baselinePlayerName)}
       ${rerollOddsRow("Reroll décennie", rerollOdds.decade, baselinePlayerName)}
     </div>
