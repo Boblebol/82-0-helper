@@ -77,6 +77,20 @@ zip -r ../release/82-0-helper-vX.Y.Z.zip .
 
 The zip should contain `manifest.json`, `content.js`, and `content.js.map` at the archive root.
 
+## Landing Page
+
+The marketing landing page lives in `landing/` and has its own Vite build for Netlify.
+
+```bash
+npm run dev:landing
+npm run build:landing
+```
+
+Netlify uses `netlify.toml`:
+
+- build command: `npm run build:landing`
+- publish directory: `landing/dist`
+
 ## Privacy And Permissions
 
 82-0 Helper requests only:

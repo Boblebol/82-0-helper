@@ -16,5 +16,5 @@
     "noEmit": true,
     "types": ["chrome", "vitest/globals"]
   },
-  "include": ["src", "tests", "vite.config.ts", "vitest.config.ts"]
+  "include": ["src", "tests", "landing/vite.config.ts", "vite.config.ts", "vitest.config.ts"]
 }

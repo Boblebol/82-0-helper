@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="82-0 Helper ajoute une sidebar de conseil pour le mode Classic de 82-0.com, avec meilleur pick, points estimés, probas de reroll et guide d'installation."
+    />
+    <meta property="og:title" content="82-0 Helper" />
+    <meta
+      property="og:description"
+      content="Une extension Chrome, Edge et Brave pour mieux drafter sur 82-0 Classic."
+    />
+    <meta property="og:type" content="website" />
+    <title>82-0 Helper - Assistant Classic mode</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="82-0 Helper">
+        <span class="brand-mark">82-0</span>
+        <span>Helper</span>
+      </a>
+      <nav class="site-nav" aria-label="Navigation principale">
+        <a href="#features">Fonctions</a>
+        <a href="#install">Installer</a>
+        <a href="https://github.com/Boblebol/82-0-helper" rel="noreferrer">GitHub</a>
+      </nav>
+      <a
+        class="nav-download"
+        href="https://github.com/Boblebol/82-0-helper/releases/download/v0.1.1/82-0-classic-assistant-v0.1.1.zip"
+      >
+        Télécharger
+      </a>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-court" aria-hidden="true">
+          <div class="court-arc"></div>
+          <div class="court-key"></div>
+          <div class="player-chip chip-one">DEN</div>
+          <div class="player-chip chip-two">2010s</div>
+          <div class="court-position position-one">PG</div>
+          <div class="court-position position-two">SF</div>
+          <div class="court-position position-three">C</div>
+        </div>
+
+        <aside class="assistant-preview" aria-label="Aperçu de la sidebar 82-0 Helper">
+          <div class="preview-status">Classic · Round 3/5</div>
+          <h2>Meilleur pick</h2>
+          <div class="pick-card">
+            <div>
+              <strong>Nikola Jokic</strong>
+              <span>DEN · 2010s</span>
+            </div>
+            <div class="pick-score">+7.2 pts</div>
+          </div>
+          <div class="preview-grid">
+            <div>
+              <span>PPG</span>
+              <strong>16.3</strong>
+            </div>
+            <div>
+              <span>REB</span>
+              <strong>9.6</strong>
+            </div>
+            <div>
+              <span>AST</span>
+              <strong>5.2</strong>
+            </div>
+          </div>
+          <div class="preview-advice">
+            <span>Reroll équipe</span>
+            <strong>18% mieux</strong>
+          </div>
+        </aside>
+
+        <div class="hero-content">
+          <p class="eyebrow">Chrome, Edge et Brave · Classic mode</p>
+          <h1 id="hero-title">82-0 Helper</h1>
+          <p class="hero-lede">
+            Une sidebar française pour choisir le meilleur pick, estimer le score de ta team et savoir quand garder tes rerolls.
+          </p>
+          <div class="hero-actions">
+            <a
+              class="button primary"
+              href="https://github.com/Boblebol/82-0-helper/releases/download/v0.1.1/82-0-classic-assistant-v0.1.1.zip"
+            >
+              Télécharger l'extension
+            </a>
+            <a class="button secondary" href="#install">Guide d'installation</a>
+          </div>
+          <p class="hero-note">Aucune automatisation: l'extension conseille, tu gardes la main sur chaque choix.</p>
+        </div>
+      </section>
+
+      <section class="summary-band" aria-label="Résumé">
+        <div>
+          <strong>Lit le roll</strong>
+          <span>team, décennie, round et roster visible.</span>
+        </div>
+        <div>
+          <strong>Compare les picks</strong>
+          <span>impact estimé sur le score final.</span>
+        </div>
+        <div>
+          <strong>Aide au reroll</strong>
+          <span>proba de trouver mieux avec tes skips restants.</span>
+        </div>
+      </section>
+
+      <section class="section" id="features">
+        <div class="section-heading">
+          <p class="eyebrow">Ce que tu vois pendant la draft</p>
+          <h2>Des conseils lisibles, directement sur 82-0.</h2>
+        </div>
+        <div class="feature-grid">
+          <article>
+            <span class="feature-kicker">Pick</span>
+            <h3>Le meilleur joueur dispo</h3>
+            <p>La sidebar classe les joueurs du roll actuel et affiche le pick conseillé avec son apport estimé.</p>
+          </article>
+          <article>
+            <span class="feature-kicker">Score</span>
+            <h3>Impact en points de jeu</h3>
+            <p>Chaque pick indique combien il ajoute à ta projection, pour comparer le gain réel plutôt qu'une seule stat.</p>
+          </article>
+          <article>
+            <span class="feature-kicker">Reroll</span>
+            <h3>Garder ou tenter</h3>
+            <p>L'aide prend en compte les joueurs déjà pris et ton unique reroll team / era pour éviter de le gaspiller.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="install-section" id="install" aria-labelledby="install-title">
+        <div class="install-copy">
+          <p class="eyebrow">Installation rapide</p>
+          <h2 id="install-title">Guide d'installation</h2>
+          <p>
+            L'extension n'est pas encore sur le Chrome Web Store. Tu l'installes en mode développeur depuis le zip de la release GitHub.
+          </p>
+          <a
+            class="button primary"
+            href="https://github.com/Boblebol/82-0-helper/releases/download/v0.1.1/82-0-classic-assistant-v0.1.1.zip"
+          >
+            Télécharger l'extension
+          </a>
+        </div>
+
+        <ol class="install-steps">
+          <li>
+            <strong>Télécharge le zip</strong>
+            <span>Récupère la dernière release puis dézippe le dossier sur ton ordinateur.</span>
+          </li>
+          <li>
+            <strong>Ouvre <code>chrome://extensions</code></strong>
+            <span>Ça marche aussi dans Edge et Brave avec leur page extensions équivalente.</span>
+          </li>
+          <li>
+            <strong>Active le Mode développeur</strong>
+            <span>Le bouton est en haut à droite sur Chrome.</span>
+          </li>
+          <li>
+            <strong>Charge le dossier dézippé</strong>
+            <span>Clique sur "Charger l'extension non empaquetée", puis sélectionne le dossier de l'extension.</span>
+          </li>
+          <li>
+            <strong>Lance une partie Classic</strong>
+            <span>Va sur 82-0.com, spin, puis laisse la sidebar te conseiller.</span>
+          </li>
+        </ol>
+      </section>
+
+      <section class="closing-section" aria-labelledby="closing-title">
+        <div>
+          <p class="eyebrow">Open source</p>
+          <h2 id="closing-title">Simple, local, transparent.</h2>
+          <p>
+            Pas de compte, pas de serveur, pas de télémétrie. Le code est public et l'extension ne fait que lire la page pour afficher ses conseils.
+          </p>
+        </div>
+        <div class="closing-actions">
+          <a class="button primary" href="https://github.com/Boblebol/82-0-helper/releases/latest">
+            Voir la dernière release
+          </a>
+          <a class="button secondary" href="https://github.com/Boblebol/82-0-helper" rel="noreferrer">
+            Code source
+          </a>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
