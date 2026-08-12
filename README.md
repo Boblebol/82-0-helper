@@ -1,5 +1,10 @@
 # 82-0 Helper
 
+[![CI](https://github.com/Boblebol/82-0-helper/actions/workflows/ci.yml/badge.svg)](https://github.com/Boblebol/82-0-helper/actions/workflows/ci.yml)
+[![Release](https://github.com/Boblebol/82-0-helper/actions/workflows/release.yml/badge.svg)](https://github.com/Boblebol/82-0-helper/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Contributors](https://img.shields.io/github/contributors/Boblebol/82-0-helper.svg)](https://github.com/Boblebol/82-0-helper/graphs/contributors)
+
 82-0 Helper is a Chromium extension for `https://www.82-0.com/`. It adds a right-side advisor panel for Classic mode drafts, in French, without automating gameplay.
 
 The extension reads the visible game state, compares the current roll against its bundled player data, and suggests the best available pick. It does not click buttons, select players, submit drafts, or change the site state.
